@@ -84,54 +84,63 @@ function renderMatchRow(match) {
   row.id = `match-${match.id}`;
   row.dataset.matchId = match.id;
 
-  // Match number
   const num = document.createElement('div');
   num.className = 'match-num';
   num.textContent = `#${match.id}`;
 
-  // Date
   const date = document.createElement('div');
   date.className = 'match-date';
   date.textContent = formatDate(match.date);
 
-  // Teams
   const teams = document.createElement('div');
   teams.className = 'match-teams';
   teams.innerHTML = `${match.home} <span class="vs">vs</span> ${match.away}`;
 
-  // Controls
   const controls = document.createElement('div');
   controls.className = 'tip-controls';
 
-  // Type buttons
-  const typeBtns = document.createElement('div');
-  typeBtns.className = 'type-btns';
+  // Leva strana: value buttons (menja se po modu)
+  const valueArea = document.createElement('div');
+  valueArea.className = 'value-btns';
+  valueArea.id = `val-${match.id}`;
 
-  for (const [type, label] of [['single','1'], ['double','12'], ['triple','1X2']]) {
+  const divider = document.createElement('div');
+  divider.className = 'divider';
+
+  // Desna strana: DVOZNAK + TROZNAK uvek vidljivi
+  const typeArea = document.createElement('div');
+  typeArea.className = 'type-btns';
+
+  const dBtn = document.createElement('button');
+  dBtn.className = 'tip-btn type-double';
+  dBtn.dataset.type = 'double';
+  dBtn.textContent = 'DVOZNAK';
+  dBtn.title = 'Dupla šansa: 1X, X2 ili 12';
+  dBtn.addEventListener('click', () => toggleDouble(match.id));
+
+  const tBtn = document.createElement('button');
+  tBtn.className = 'tip-btn type-triple';
+  tBtn.dataset.type = 'triple';
+  tBtn.textContent = 'TROZNAK';
+  tBtn.title = 'Automatski pogodak (1X2)';
+  tBtn.addEventListener('click', () => toggleTriple(match.id));
+
+  typeArea.appendChild(dBtn);
+  typeArea.appendChild(tBtn);
+
+  // Inicijalno popuni 1/X/2 direktno (pre dodavanja u DOM)
+  for (const val of ['1', 'X', '2']) {
     const btn = document.createElement('button');
-    btn.className = `tip-btn type-${type}`;
-    btn.dataset.type = type;
-    btn.title = type === 'single' ? 'Jednoznak' : type === 'double' ? 'Dvoznak' : 'Troznak';
-    btn.textContent = label === '12' ? '½' : label; // visual label
-    // Better labels
-    if (type === 'single') btn.textContent = '1';
-    if (type === 'double') btn.textContent = '½';
-    if (type === 'triple') btn.textContent = '1X2';
-    btn.addEventListener('click', () => selectType(match.id, type));
-    typeBtns.appendChild(btn);
+    btn.className = 'tip-btn val-btn';
+    btn.dataset.value = val;
+    btn.textContent = val;
+    btn.addEventListener('click', () => selectValue(match.id, val, 'single'));
+    valueArea.appendChild(btn);
   }
 
-  const div = document.createElement('div');
-  div.className = 'divider';
-
-  // Value buttons container
-  const valueBtns = document.createElement('div');
-  valueBtns.className = 'value-btns';
-  valueBtns.id = `val-${match.id}`;
-
-  controls.appendChild(typeBtns);
-  controls.appendChild(div);
-  controls.appendChild(valueBtns);
+  controls.appendChild(valueArea);
+  controls.appendChild(divider);
+  controls.appendChild(typeArea);
 
   row.appendChild(num);
   row.appendChild(date);
@@ -141,50 +150,105 @@ function renderMatchRow(match) {
   return row;
 }
 
-// ---- Izbor tipa ----
-function selectType(matchId, type) {
-  // Provera limita pre promene
+// ---- Prikaži value buttons u zavisnosti od moda ----
+function renderValueArea(matchId, mode) {
+  const container = document.getElementById(`val-${matchId}`);
+  container.innerHTML = '';
+
+  if (mode === 'triple') {
+    const span = document.createElement('span');
+    span.className = 'badge badge-triple';
+    span.textContent = 'AUTO ✓';
+    container.appendChild(span);
+    return;
+  }
+
+  const options = mode === 'double' ? ['1X', 'X2', '12'] : ['1', 'X', '2'];
+  const currentVal = tips[matchId] && tips[matchId].type === mode ? tips[matchId].value : null;
+
+  for (const val of options) {
+    const btn = document.createElement('button');
+    btn.className = 'tip-btn val-btn';
+    btn.dataset.value = val;
+    btn.textContent = val;
+    if (currentVal === val) btn.classList.add('active');
+    btn.addEventListener('click', () => selectValue(matchId, val, mode));
+    container.appendChild(btn);
+  }
+}
+
+// ---- Toggle DVOZNAK ----
+function toggleDouble(matchId) {
   const current = tips[matchId];
+  const currentMode = current ? current.type : 'single';
+
+  if (currentMode === 'double') {
+    // Vrati na single, poništi tip
+    tips[matchId] = null;
+    updateTypeButtons(matchId, 'single');
+    renderValueArea(matchId, 'single');
+    document.getElementById(`match-${matchId}`).className = 'match-row';
+    updateCounter();
+    updateGroupCounters();
+    return;
+  }
+
+  // Proveri limit
   const counts = getCounts();
-
-  // Ako menjamo sa drugog tipa, oduzmi stari
-  if (current && current.type !== type && current.value !== null) {
-    // Proveri da li novi tip može da se doda
-    const newCount = counts[type] + 1;
-    if (newCount > LIMITS[type]) {
-      showTypeError(type);
-      return;
-    }
-  } else if (!current || current.value === null) {
-    const newCount = counts[type] + 1;
-    if (newCount > LIMITS[type]) {
-      showTypeError(type);
-      return;
-    }
+  // Ako prelazimo sa completed single/triple, limit se smanjuje
+  const prevType = current && current.value ? current.type : null;
+  const effectiveDoubleCount = prevType === 'double' ? counts.double - 1 : counts.double;
+  if (effectiveDoubleCount >= LIMITS.double && prevType !== 'double') {
+    showTypeError('double');
+    return;
   }
 
-  // Postavi tip
-  if (type === 'triple') {
-    tips[matchId] = { type: 'triple', value: '1X2' };
-  } else {
-    tips[matchId] = { type, value: null };
-  }
-
-  // Update UI
-  const row = document.getElementById(`match-${matchId}`);
-
-  // Highlight active type button
-  row.querySelectorAll('.tip-btn[data-type]').forEach(b => {
-    b.classList.toggle('active', b.dataset.type === type);
-  });
-
-  // Render value buttons
-  renderValueBtns(matchId, type);
-
-  // Border color
-  row.className = `match-row${type === 'triple' ? ' filled-triple' : ''}`;
-
+  tips[matchId] = { type: 'double', value: null };
+  updateTypeButtons(matchId, 'double');
+  renderValueArea(matchId, 'double');
+  document.getElementById(`match-${matchId}`).className = 'match-row';
   updateCounter();
+  updateGroupCounters();
+}
+
+// ---- Toggle TROZNAK ----
+function toggleTriple(matchId) {
+  const current = tips[matchId];
+  const currentMode = current ? current.type : 'single';
+
+  if (currentMode === 'triple') {
+    // Vrati na single, poništi tip
+    tips[matchId] = null;
+    updateTypeButtons(matchId, 'single');
+    renderValueArea(matchId, 'single');
+    document.getElementById(`match-${matchId}`).className = 'match-row';
+    updateCounter();
+    updateGroupCounters();
+    return;
+  }
+
+  // Proveri limit
+  const counts = getCounts();
+  const prevType = current && current.value ? current.type : null;
+  const effectiveTripleCount = prevType === 'triple' ? counts.triple - 1 : counts.triple;
+  if (effectiveTripleCount >= LIMITS.triple && prevType !== 'triple') {
+    showTypeError('triple');
+    return;
+  }
+
+  tips[matchId] = { type: 'triple', value: '1X2' };
+  updateTypeButtons(matchId, 'triple');
+  renderValueArea(matchId, 'triple');
+  document.getElementById(`match-${matchId}`).className = 'match-row filled-triple';
+  updateCounter();
+  updateGroupCounters();
+}
+
+// ---- Highlight type buttons ----
+function updateTypeButtons(matchId, mode) {
+  const row = document.getElementById(`match-${matchId}`);
+  row.querySelector('.type-double').classList.toggle('active', mode === 'double');
+  row.querySelector('.type-triple').classList.toggle('active', mode === 'triple');
 }
 
 function showTypeError(type) {
@@ -194,52 +258,40 @@ function showTypeError(type) {
   setTimeout(() => { el.textContent = ''; }, 3000);
 }
 
-// ---- Render vrednosti ----
-function renderValueBtns(matchId, type) {
-  const container = document.getElementById(`val-${matchId}`);
-  container.innerHTML = '';
-
-  if (type === 'triple') {
-    const span = document.createElement('span');
-    span.className = 'badge badge-triple';
-    span.textContent = '1X2 ✓';
-    container.appendChild(span);
-    return;
-  }
-
-  for (const val of TYPE_OPTIONS[type]) {
-    const btn = document.createElement('button');
-    btn.className = 'tip-btn val-btn';
-    btn.dataset.value = val;
-    btn.textContent = val;
-
-    // Restore selection if exists
-    if (tips[matchId] && tips[matchId].value === val) {
-      btn.classList.add('active');
-    }
-
-    btn.addEventListener('click', () => selectValue(matchId, val));
-    container.appendChild(btn);
-  }
-}
-
 // ---- Izbor vrednosti ----
-function selectValue(matchId, value) {
-  if (!tips[matchId]) return;
+function selectValue(matchId, value, mode) {
+  // Proveri limit ako prelazimo na novi tip
+  const current = tips[matchId];
+  const counts = getCounts();
 
-  tips[matchId].value = value;
+  if (!current || current.type !== mode) {
+    // Novi tip — proveri limit
+    if (mode === 'single') {
+      const prevType = current ? current.type : null;
+      const effectiveCount = prevType === 'single' && current.value ? counts.single - 1 : counts.single;
+      if (effectiveCount >= LIMITS.single && prevType !== 'single') {
+        showTypeError('single');
+        return;
+      }
+    }
+  }
 
-  // Update UI
+  tips[matchId] = { type: mode, value };
+
+  // Update value buttons
   const container = document.getElementById(`val-${matchId}`);
   container.querySelectorAll('.val-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.value === value);
   });
 
-  const row = document.getElementById(`match-${matchId}`);
-  const type = tips[matchId].type;
-  row.className = `match-row filled-${type}`;
+  // Update type buttons highlight
+  updateTypeButtons(matchId, mode);
+
+  // Border
+  document.getElementById(`match-${matchId}`).className = `match-row filled-${mode}`;
 
   updateCounter();
+  updateGroupCounters();
 }
 
 // ---- Render sve grupe ----

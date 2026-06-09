@@ -44,9 +44,9 @@ function updateCounter() {
   document.getElementById('cnt-triple').className = `counter-pill triple${tOk ? ' ok' : c.triple > LIMITS.triple ? ' err' : ''}`;
 
   const st = document.getElementById('counter-status');
-  if      (c.single > LIMITS.single)  st.innerHTML = `<span style="color:var(--danger)">Previše jednoznaka (max 47)</span>`;
-  else if (c.double > LIMITS.double)  st.innerHTML = `<span style="color:var(--danger)">Previše dvoznaka (max 20)</span>`;
-  else if (c.triple > LIMITS.triple)  st.innerHTML = `<span style="color:var(--danger)">Previše troznaka (max 5)</span>`;
+  if      (c.single > LIMITS.single)  st.innerHTML = `<span style="color:var(--danger)">Jednoznaka ima ${c.single}/47 — ispravi raspodelu pre slanja</span>`;
+  else if (c.double > LIMITS.double)  st.innerHTML = `<span style="color:var(--danger)">Dvoznaka ima ${c.double}/20 — ispravi raspodelu pre slanja</span>`;
+  else if (c.triple > LIMITS.triple)  st.innerHTML = `<span style="color:var(--danger)">Troznaka ima ${c.triple}/5 — ispravi raspodelu pre slanja</span>`;
   else if (sOk && dOk && tOk)         st.innerHTML = `<span style="color:var(--success)">✓ Sve ispravno popunjeno</span>`;
   else {
     const rem = 72 - c.total;

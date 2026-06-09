@@ -263,6 +263,10 @@ async function loadSettings() {
 
 // ---- Export Excel ----
 async function exportCSV() {
+  if (typeof XLSX === 'undefined') {
+    alert('SheetJS biblioteka se nije učitala. Provjeri internet konekciju i pokušaj ponovo.');
+    return;
+  }
   const [{ data: participants }, { data: tips }, { data: matches }] = await Promise.all([
     supabase.from('participants').select('id, name, created_at').order('name'),
     supabase.from('tips').select('participant_id, match_id, tip_type, tip_value'),

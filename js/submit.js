@@ -1,11 +1,11 @@
 // ============================================================
-// submit.js — logika forme za unos tipova
+// submit.js
 // ============================================================
 
 const DEADLINE = new Date('2026-06-10T23:59:59+02:00');
 const LIMITS = { single: 47, double: 20, triple: 5 };
 
-// tips[matchId] = { type: 'single'|'double'|'triple', value: '1'|'X'|'2'|'1X'|'X2'|'12'|'1X2' }
+// tips[matchId] = { type: 'single'|'double'|'triple', value: string|null }
 const tips = {};
 
 // ---- Provera roka ----
@@ -19,21 +19,13 @@ function checkDeadline() {
   return true;
 }
 
-// ---- Opcije po tipu ----
-const TYPE_OPTIONS = {
-  single: ['1', 'X', '2'],
-  double: ['1X', 'X2', '12'],
-  triple: ['1X2'],
-};
-
 // ---- Brojač ----
 function getCounts() {
   const c = { single: 0, double: 0, triple: 0, total: 0 };
   for (const t of Object.values(tips)) {
-    if (t.value !== null) {
-      c[t.type]++;
-      c.total++;
-    }
+    if (!t || t.value === null) continue;
+    c[t.type]++;
+    c.total++;
   }
   return c;
 }
@@ -41,22 +33,21 @@ function getCounts() {
 function updateCounter() {
   const c = getCounts();
 
-  const sEl = document.getElementById('cnt-single');
-  const dEl = document.getElementById('cnt-double');
-  const tEl = document.getElementById('cnt-triple');
-  const totEl = document.getElementById('cnt-total');
+  document.getElementById('cnt-single').textContent = `${c.single}/${LIMITS.single}`;
+  document.getElementById('cnt-double').textContent = `${c.double}/${LIMITS.double}`;
+  document.getElementById('cnt-triple').textContent = `${c.triple}/${LIMITS.triple}`;
+  document.getElementById('cnt-total').textContent  = `${c.total}/72`;
+
+  const sOk = c.single === LIMITS.single;
+  const dOk = c.double === LIMITS.double;
+  const tOk = c.triple === LIMITS.triple;
+
+  document.getElementById('cnt-single').className = `counter-pill single${sOk ? ' ok' : c.single > LIMITS.single ? ' err' : ''}`;
+  document.getElementById('cnt-double').className = `counter-pill double${dOk ? ' ok' : c.double > LIMITS.double ? ' err' : ''}`;
+  document.getElementById('cnt-triple').className = `counter-pill triple${tOk ? ' ok' : c.triple > LIMITS.triple ? ' err' : ''}`;
+
+  const valid = sOk && dOk && tOk;
   const statusEl = document.getElementById('counter-status');
-
-  sEl.textContent = `${c.single}/${LIMITS.single}`;
-  dEl.textContent = `${c.double}/${LIMITS.double}`;
-  tEl.textContent = `${c.triple}/${LIMITS.triple}`;
-  totEl.textContent = `${c.total}/72`;
-
-  sEl.className = `counter-pill single${c.single === LIMITS.single ? ' ok' : (c.single > LIMITS.single ? ' err' : '')}`;
-  dEl.className = `counter-pill double${c.double === LIMITS.double ? ' ok' : (c.double > LIMITS.double ? ' err' : '')}`;
-  tEl.className = `counter-pill triple${c.triple === LIMITS.triple ? ' ok' : (c.triple > LIMITS.triple ? ' err' : '')}`;
-
-  const valid = c.single === LIMITS.single && c.double === LIMITS.double && c.triple === LIMITS.triple;
 
   if (c.single > LIMITS.single) {
     statusEl.innerHTML = `<span style="color:var(--danger)">Previše jednoznaka (max 47)</span>`;
@@ -77,66 +68,74 @@ function updateCounter() {
   document.getElementById('submit-btn').disabled = !(valid && nameOk);
 }
 
+function updateGroupCounters() {
+  for (const group of GROUPS) {
+    const filled = getMatchesByGroup(group).filter(m => tips[m.id] && tips[m.id].value !== null).length;
+    const el = document.getElementById(`gc-${group}`);
+    if (el) el.textContent = `${filled}/${getMatchesByGroup(group).length}`;
+  }
+}
+
 // ---- Render match row ----
 function renderMatchRow(match) {
   const row = document.createElement('div');
   row.className = 'match-row';
   row.id = `match-${match.id}`;
-  row.dataset.matchId = match.id;
 
+  // Broj
   const num = document.createElement('div');
   num.className = 'match-num';
   num.textContent = `#${match.id}`;
 
+  // Datum
   const date = document.createElement('div');
   date.className = 'match-date';
   date.textContent = formatDate(match.date);
 
+  // Timovi
   const teams = document.createElement('div');
   teams.className = 'match-teams';
   teams.innerHTML = `${match.home} <span class="vs">vs</span> ${match.away}`;
 
+  // Kontrole
   const controls = document.createElement('div');
   controls.className = 'tip-controls';
 
-  // Leva strana: value buttons (menja se po modu)
+  // Levo: value buttons (1/X/2 ili 1X/X2/12 ili AUTO)
   const valueArea = document.createElement('div');
   valueArea.className = 'value-btns';
   valueArea.id = `val-${match.id}`;
 
+  // Dodaj inicijalne 1/X/2 dugmiće odmah
+  ['1', 'X', '2'].forEach(val => {
+    const btn = document.createElement('button');
+    btn.className = 'tip-btn val-btn';
+    btn.textContent = val;
+    btn.addEventListener('click', () => onValueClick(match.id, 'single', val));
+    valueArea.appendChild(btn);
+  });
+
   const divider = document.createElement('div');
   divider.className = 'divider';
 
-  // Desna strana: DVOZNAK + TROZNAK uvek vidljivi
+  // Desno: DVOZNAK + TROZNAK
   const typeArea = document.createElement('div');
   typeArea.className = 'type-btns';
 
   const dBtn = document.createElement('button');
   dBtn.className = 'tip-btn type-double';
-  dBtn.dataset.type = 'double';
+  dBtn.id = `dbtn-${match.id}`;
   dBtn.textContent = 'DVOZNAK';
-  dBtn.title = 'Dupla šansa: 1X, X2 ili 12';
-  dBtn.addEventListener('click', () => toggleDouble(match.id));
+  dBtn.addEventListener('click', () => onTypeClick(match.id, 'double'));
 
   const tBtn = document.createElement('button');
   tBtn.className = 'tip-btn type-triple';
-  tBtn.dataset.type = 'triple';
+  tBtn.id = `tbtn-${match.id}`;
   tBtn.textContent = 'TROZNAK';
-  tBtn.title = 'Automatski pogodak (1X2)';
-  tBtn.addEventListener('click', () => toggleTriple(match.id));
+  tBtn.addEventListener('click', () => onTypeClick(match.id, 'triple'));
 
   typeArea.appendChild(dBtn);
   typeArea.appendChild(tBtn);
-
-  // Inicijalno popuni 1/X/2 direktno (pre dodavanja u DOM)
-  for (const val of ['1', 'X', '2']) {
-    const btn = document.createElement('button');
-    btn.className = 'tip-btn val-btn';
-    btn.dataset.value = val;
-    btn.textContent = val;
-    btn.addEventListener('click', () => selectValue(match.id, val, 'single'));
-    valueArea.appendChild(btn);
-  }
 
   controls.appendChild(valueArea);
   controls.appendChild(divider);
@@ -150,44 +149,15 @@ function renderMatchRow(match) {
   return row;
 }
 
-// ---- Prikaži value buttons u zavisnosti od moda ----
-function renderValueArea(matchId, mode) {
-  const container = document.getElementById(`val-${matchId}`);
-  container.innerHTML = '';
-
-  if (mode === 'triple') {
-    const span = document.createElement('span');
-    span.className = 'badge badge-triple';
-    span.textContent = 'AUTO ✓';
-    container.appendChild(span);
-    return;
-  }
-
-  const options = mode === 'double' ? ['1X', 'X2', '12'] : ['1', 'X', '2'];
-  const currentVal = tips[matchId] && tips[matchId].type === mode ? tips[matchId].value : null;
-
-  for (const val of options) {
-    const btn = document.createElement('button');
-    btn.className = 'tip-btn val-btn';
-    btn.dataset.value = val;
-    btn.textContent = val;
-    if (currentVal === val) btn.classList.add('active');
-    btn.addEventListener('click', () => selectValue(matchId, val, mode));
-    container.appendChild(btn);
-  }
-}
-
-// ---- Toggle DVOZNAK ----
-function toggleDouble(matchId) {
+// ---- Klik na DVOZNAK ili TROZNAK ----
+function onTypeClick(matchId, type) {
   const current = tips[matchId];
-  const currentMode = current ? current.type : 'single';
+  const currentType = current ? current.type : 'single';
 
-  if (currentMode === 'double') {
-    // Vrati na single, poništi tip
+  // Klik na aktivan tip → vrati na single
+  if (currentType === type) {
     tips[matchId] = null;
-    updateTypeButtons(matchId, 'single');
-    renderValueArea(matchId, 'single');
-    document.getElementById(`match-${matchId}`).className = 'match-row';
+    refreshRow(matchId, 'single', null);
     updateCounter();
     updateGroupCounters();
     return;
@@ -195,103 +165,93 @@ function toggleDouble(matchId) {
 
   // Proveri limit
   const counts = getCounts();
-  // Ako prelazimo sa completed single/triple, limit se smanjuje
-  const prevType = current && current.value ? current.type : null;
-  const effectiveDoubleCount = prevType === 'double' ? counts.double - 1 : counts.double;
-  if (effectiveDoubleCount >= LIMITS.double && prevType !== 'double') {
-    showTypeError('double');
+  // Oduzmi stari tip ako je bio popunjen
+  const prevFilled = current && current.value !== null ? 1 : 0;
+  const prevType = current ? current.type : null;
+  const currentTypeCount = counts[type] - (prevType === type ? prevFilled : 0);
+
+  if (currentTypeCount >= LIMITS[type]) {
+    showError(`Dostignut limit za ${type === 'double' ? 'dvoznak (max 20)' : 'troznak (max 5)'}`);
     return;
   }
 
-  tips[matchId] = { type: 'double', value: null };
-  updateTypeButtons(matchId, 'double');
-  renderValueArea(matchId, 'double');
-  document.getElementById(`match-${matchId}`).className = 'match-row';
+  if (type === 'triple') {
+    tips[matchId] = { type: 'triple', value: '1X2' };
+    refreshRow(matchId, 'triple', '1X2');
+  } else {
+    tips[matchId] = { type: 'double', value: null };
+    refreshRow(matchId, 'double', null);
+  }
+
   updateCounter();
   updateGroupCounters();
 }
 
-// ---- Toggle TROZNAK ----
-function toggleTriple(matchId) {
+// ---- Klik na vrednost (1/X/2 ili 1X/X2/12) ----
+function onValueClick(matchId, type, value) {
   const current = tips[matchId];
-  const currentMode = current ? current.type : 'single';
+  const currentType = current ? current.type : 'single';
 
-  if (currentMode === 'triple') {
-    // Vrati na single, poništi tip
-    tips[matchId] = null;
-    updateTypeButtons(matchId, 'single');
-    renderValueArea(matchId, 'single');
-    document.getElementById(`match-${matchId}`).className = 'match-row';
-    updateCounter();
-    updateGroupCounters();
-    return;
-  }
+  // Ako klikamo single vrednost dok smo u double modu — ignorisi
+  // (single dugmici se ne prikazuju u double/triple modu)
 
-  // Proveri limit
-  const counts = getCounts();
-  const prevType = current && current.value ? current.type : null;
-  const effectiveTripleCount = prevType === 'triple' ? counts.triple - 1 : counts.triple;
-  if (effectiveTripleCount >= LIMITS.triple && prevType !== 'triple') {
-    showTypeError('triple');
-    return;
-  }
-
-  tips[matchId] = { type: 'triple', value: '1X2' };
-  updateTypeButtons(matchId, 'triple');
-  renderValueArea(matchId, 'triple');
-  document.getElementById(`match-${matchId}`).className = 'match-row filled-triple';
-  updateCounter();
-  updateGroupCounters();
-}
-
-// ---- Highlight type buttons ----
-function updateTypeButtons(matchId, mode) {
-  const row = document.getElementById(`match-${matchId}`);
-  row.querySelector('.type-double').classList.toggle('active', mode === 'double');
-  row.querySelector('.type-triple').classList.toggle('active', mode === 'triple');
-}
-
-function showTypeError(type) {
-  const labels = { single: 'jednoznak (max 47)', double: 'dvoznak (max 20)', triple: 'troznak (max 5)' };
-  const el = document.getElementById('submit-error');
-  el.textContent = `Dostignut limit za ${labels[type]}`;
-  setTimeout(() => { el.textContent = ''; }, 3000);
-}
-
-// ---- Izbor vrednosti ----
-function selectValue(matchId, value, mode) {
-  // Proveri limit ako prelazimo na novi tip
-  const current = tips[matchId];
-  const counts = getCounts();
-
-  if (!current || current.type !== mode) {
-    // Novi tip — proveri limit
-    if (mode === 'single') {
-      const prevType = current ? current.type : null;
-      const effectiveCount = prevType === 'single' && current.value ? counts.single - 1 : counts.single;
-      if (effectiveCount >= LIMITS.single && prevType !== 'single') {
-        showTypeError('single');
-        return;
-      }
+  // Proveri limit samo ako menjamo tip
+  if (currentType !== type) {
+    const counts = getCounts();
+    const prevFilled = current && current.value !== null ? 1 : 0;
+    const prevType = current ? current.type : null;
+    const newCount = counts[type] - (prevType === type ? prevFilled : 0);
+    if (newCount >= LIMITS[type]) {
+      showError(`Dostignut limit za ${type === 'single' ? 'jednoznak (max 47)' : type === 'double' ? 'dvoznak (max 20)' : 'troznak (max 5)'}`);
+      return;
     }
   }
 
-  tips[matchId] = { type: mode, value };
-
-  // Update value buttons
-  const container = document.getElementById(`val-${matchId}`);
-  container.querySelectorAll('.val-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.value === value);
-  });
-
-  // Update type buttons highlight
-  updateTypeButtons(matchId, mode);
-
-  // Border
-  document.getElementById(`match-${matchId}`).className = `match-row filled-${mode}`;
-
+  tips[matchId] = { type, value };
+  refreshRow(matchId, type, value);
   updateCounter();
   updateGroupCounters();
+}
+
+// ---- Osvezi prikaz jednog reda ----
+function refreshRow(matchId, type, selectedValue) {
+  const row = document.getElementById(`match-${matchId}`);
+  const valueArea = document.getElementById(`val-${matchId}`);
+
+  // Odredi klasu reda
+  row.className = selectedValue !== null ? `match-row filled-${type}` : 'match-row';
+
+  // Highlight type dugmiće
+  const dBtn = document.getElementById(`dbtn-${matchId}`);
+  const tBtn = document.getElementById(`tbtn-${matchId}`);
+  if (dBtn) dBtn.classList.toggle('active', type === 'double');
+  if (tBtn) tBtn.classList.toggle('active', type === 'triple');
+
+  // Osvezi value area
+  valueArea.innerHTML = '';
+
+  if (type === 'triple') {
+    const span = document.createElement('span');
+    span.className = 'badge badge-triple';
+    span.textContent = 'AUTO ✓';
+    valueArea.appendChild(span);
+    return;
+  }
+
+  const options = type === 'double' ? ['1X', 'X2', '12'] : ['1', 'X', '2'];
+  options.forEach(val => {
+    const btn = document.createElement('button');
+    btn.className = `tip-btn val-btn${val === selectedValue ? ' active' : ''}`;
+    btn.textContent = val;
+    btn.addEventListener('click', () => onValueClick(matchId, type, val));
+    valueArea.appendChild(btn);
+  });
+}
+
+function showError(msg) {
+  const el = document.getElementById('submit-error');
+  el.textContent = msg;
+  setTimeout(() => { el.textContent = ''; }, 3000);
 }
 
 // ---- Render sve grupe ----
@@ -310,13 +270,12 @@ function renderMatches() {
     header.innerHTML = `
       <span class="badge badge-group">Grupa ${group}</span>
       <h3>Grupa ${group}</h3>
-      <span class="group-count" id="gc-${group}" style="font-size:12px;color:var(--text-muted)">0/${groupMatches.length}</span>
+      <span id="gc-${group}" style="font-size:12px;color:var(--text-muted)">0/${groupMatches.length}</span>
       <span class="chevron">▼</span>
     `;
 
     const body = document.createElement('div');
     body.className = 'group-body';
-    body.id = `group-body-${group}`;
 
     header.addEventListener('click', () => {
       body.classList.toggle('hidden');
@@ -333,89 +292,49 @@ function renderMatches() {
   }
 }
 
-// ---- Update group counters ----
-function updateGroupCounters() {
-  for (const group of GROUPS) {
-    const groupMatches = getMatchesByGroup(group);
-    const filled = groupMatches.filter(m => tips[m.id] && tips[m.id].value !== null).length;
-    const el = document.getElementById(`gc-${group}`);
-    if (el) el.textContent = `${filled}/${groupMatches.length}`;
-  }
-}
-
-// Override updateCounter to also update group counters
-const _updateCounter = updateCounter;
-// We'll call updateGroupCounters from the patched update
-
 // ---- Submit ----
 document.getElementById('submit-btn').addEventListener('click', async () => {
   const name = document.getElementById('participant-name').value.trim();
-  if (!name) {
-    document.getElementById('submit-error').textContent = 'Unesi ime i prezime.';
-    return;
-  }
+  if (!name) { showError('Unesi ime i prezime.'); return; }
 
   const counts = getCounts();
   if (counts.single !== 47 || counts.double !== 20 || counts.triple !== 5) {
-    document.getElementById('submit-error').textContent = 'Proveri raspodelu tipova (47/20/5).';
+    showError('Proveri raspodelu tipova (47/20/5).');
     return;
   }
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = 'Slanje...';
-  document.getElementById('submit-error').textContent = '';
 
   try {
-    // 1. Kreiraj učesnika
     const { data: participant, error: pErr } = await supabase
-      .from('participants')
-      .insert({ name })
-      .select('id')
-      .single();
-
+      .from('participants').insert({ name }).select('id').single();
     if (pErr) throw pErr;
 
-    // 2. Pripremi batch tipova
-    const tipsArr = Object.entries(tips).map(([matchId, t]) => ({
-      participant_id: participant.id,
-      match_id: parseInt(matchId),
-      tip_type: t.type,
-      tip_value: t.value,
-    }));
+    const tipsArr = Object.entries(tips)
+      .filter(([, t]) => t && t.value)
+      .map(([matchId, t]) => ({
+        participant_id: participant.id,
+        match_id: parseInt(matchId),
+        tip_type: t.type,
+        tip_value: t.value,
+      }));
 
-    // 3. Insert tipova u batchevima
-    const BATCH = 50;
-    for (let i = 0; i < tipsArr.length; i += BATCH) {
-      const { error: tErr } = await supabase
-        .from('tips')
-        .insert(tipsArr.slice(i, i + BATCH));
+    for (let i = 0; i < tipsArr.length; i += 50) {
+      const { error: tErr } = await supabase.from('tips').insert(tipsArr.slice(i, i + 50));
       if (tErr) throw tErr;
     }
 
-    // 4. Prikaži success
-    const modal = document.getElementById('success-modal');
-    modal.style.display = 'flex';
-
+    document.getElementById('success-modal').style.display = 'flex';
   } catch (err) {
-    console.error(err);
-    document.getElementById('submit-error').textContent =
-      'Greška pri slanju: ' + (err.message || 'Pokušaj ponovo.');
+    showError('Greška pri slanju: ' + (err.message || 'Pokušaj ponovo.'));
     btn.disabled = false;
     btn.textContent = 'Pošalji tipove';
   }
 });
 
-// Name input triggers counter update (for button enable)
 document.getElementById('participant-name').addEventListener('input', updateCounter);
-
-// ---- Patch updateCounter to also update group counters ----
-const origUpdateCounter = updateCounter;
-function patchedUpdateCounter() {
-  origUpdateCounter();
-  updateGroupCounters();
-}
-// Replace all calls — we'll just call patchedUpdateCounter after type/value select
 
 // ---- Init ----
 if (checkDeadline()) {

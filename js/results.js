@@ -15,9 +15,6 @@ function isCorrect(tipType, tipValue, result) {
   return false;
 }
 
-function tipClass(tipType) {
-  return tipType === 'single' ? 's' : tipType === 'double' ? 'd' : 't';
-}
 
 async function loadResults() {
   const isOpen = new Date() < DEADLINE;
@@ -153,11 +150,11 @@ function buildDetailTable(scored, tipMap, resultMap) {
   const thead = document.getElementById('detail-head');
   const tbody = document.getElementById('detail-body');
 
-  // Header row: Ime | #1 | #2 | ... | #72 | Σ
+  // Header row: Ime | home vs away | ... | Σ
   const hRow = document.createElement('tr');
   hRow.innerHTML = `<th style="position:sticky;left:0;background:var(--bg-card2);z-index:3;">Učesnik</th>`;
   for (const m of MATCHES) {
-    hRow.innerHTML += `<th class="match-header" title="${m.home} vs ${m.away}">#${m.id}</th>`;
+    hRow.innerHTML += `<th class="match-header">${escHtml(m.home)} vs ${escHtml(m.away)}</th>`;
   }
   hRow.innerHTML += `<th style="position:sticky;right:0;background:var(--bg-card2);z-index:3;">Σ</th>`;
   thead.appendChild(hRow);
@@ -186,9 +183,8 @@ function buildDetailTable(scored, tipMap, resultMap) {
         continue;
       }
       const ok = isCorrect(t.type, t.value, r);
-      const cls = tipClass(t.type);
       const stateCls = ok === null ? '' : (ok ? ' ok' : ' bad');
-      row.innerHTML += `<td><span class="tc ${cls}${stateCls}">${t.value}</span></td>`;
+      row.innerHTML += `<td><span class="tc${stateCls}">${t.value}</span></td>`;
     }
 
     row.innerHTML += `<td class="score-cell">${p.correct}</td>`;

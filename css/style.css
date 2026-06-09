@@ -310,14 +310,16 @@ a:hover { text-decoration: underline; }
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 9px 12px;
+  padding: 11px 12px 9px;
   background: var(--bg-card2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
-  font-size: 14px;
+  font-size: 15px;
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  line-height: 1.6;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   outline: none;
   transition: border-color .15s;
 }

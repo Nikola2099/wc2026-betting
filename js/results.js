@@ -130,7 +130,8 @@ function buildDetailTable(scored, tipMap, resultMap) {
   let hHtml = `<th class="match-col">Utakmica</th><th class="res-col">Rez.</th>`;
   for (const p of scored) {
     const parts = escHtml(p.name).split(' ');
-    hHtml += `<th title="${escHtml(p.name)}" style="font-size:10px;padding:5px 4px;max-width:70px;">${parts[0]}<br><span style="font-weight:400;color:var(--text-muted)">${parts[1]||''}</span></th>`;
+    const scoreColor = p.correct >= 50 ? 'var(--success)' : p.correct >= 35 ? 'var(--gold)' : 'var(--text-muted)';
+    hHtml += `<th title="${escHtml(p.name)}" style="font-size:10px;padding:5px 4px;max-width:70px;">${parts[0]}<br><span style="font-weight:400;color:var(--text-muted)">${parts[1]||''}</span><br><span style="font-weight:800;font-size:12px;color:${scoreColor}">${p.correct}</span></th>`;
   }
   hRow.innerHTML = hHtml;
   thead.appendChild(hRow);

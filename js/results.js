@@ -90,45 +90,20 @@ async function loadResults() {
   let rank = 1;
   for (let i = 0; i < scored.length; i++) {
     const p = scored[i];
-    // Isti rank za iste bodove
     if (i > 0 && scored[i].correct < scored[i-1].correct) rank = i + 1;
+
+    const rankLabels = { 1: '🥇', 2: '🥈', 3: '🥉' };
+    const pct = resultsEntered > 0 ? `${Math.round(p.correct / resultsEntered * 100)}%` : '-';
+    const scoreColor = rank === 1 ? 'var(--success)' : rank <= 3 ? 'var(--gold)' : 'var(--text)';
 
     const row = document.createElement('div');
     row.className = `leaderboard-row${rank <= 3 ? ` top${rank}` : ''}`;
-
-    const rankLabels = { 1: '🥇', 2: '🥈', 3: '🥉' };
-    const rankEl = document.createElement('div');
-    rankEl.className = `rank-num r${rank <= 3 ? rank : ''}`;
-    rankEl.textContent = rankLabels[rank] || rank;
-
-    const info = document.createElement('div');
-    info.innerHTML = `
-      <div class="participant-name">${escHtml(p.name)}</div>
-      <div class="participant-meta">
-        ${p.correct} / ${resultsEntered} pogodaka
-        ${rank === 1 && resultsEntered > 0 ? ' 🏆' : ''}
-      </div>
-      <div class="progress-bar" style="max-width: 200px;">
-        <div class="progress-fill" style="width: ${resultsEntered > 0 ? Math.round(p.correct/resultsEntered*100) : 0}%"></div>
-      </div>
+    row.innerHTML = `
+      <div class="rank-num r${rank <= 3 ? rank : ''}">${rankLabels[rank] || rank}</div>
+      <div class="participant-name" title="${escHtml(p.name)}">${escHtml(p.name)}</div>
+      <div class="score-big" style="color:${scoreColor}">${p.correct}</div>
+      <div style="font-size:11px;color:var(--text-muted);text-align:right">${pct}</div>
     `;
-
-    const scoreWrap = document.createElement('div');
-    scoreWrap.style.textAlign = 'right';
-    scoreWrap.innerHTML = `
-      <div class="score-big">${p.correct}</div>
-      <div class="score-max">/ ${resultsEntered}</div>
-    `;
-
-    const pct = document.createElement('div');
-    pct.style.cssText = 'font-size:13px;color:var(--text-muted);text-align:right;min-width:48px;';
-    pct.textContent = resultsEntered > 0
-      ? `${Math.round(p.correct / resultsEntered * 100)}%` : '-';
-
-    row.appendChild(rankEl);
-    row.appendChild(info);
-    row.appendChild(scoreWrap);
-    row.appendChild(pct);
     list.appendChild(row);
   }
 
@@ -150,44 +125,42 @@ function buildDetailTable(scored, tipMap, resultMap) {
   const thead = document.getElementById('detail-head');
   const tbody = document.getElementById('detail-body');
 
-  // Header row: Ime | home vs away | ... | Σ
+  // Header: Utakmica | Rez. | ime1 | ime2 | ...
   const hRow = document.createElement('tr');
-  hRow.innerHTML = `<th style="position:sticky;left:0;background:var(--bg-card2);z-index:3;">Učesnik</th>`;
-  for (const m of MATCHES) {
-    hRow.innerHTML += `<th class="match-header">${escHtml(m.home)} vs ${escHtml(m.away)}</th>`;
+  let hHtml = `<th class="match-col">Utakmica</th><th class="res-col">Rez.</th>`;
+  for (const p of scored) {
+    const parts = escHtml(p.name).split(' ');
+    hHtml += `<th title="${escHtml(p.name)}" style="font-size:10px;padding:5px 4px;max-width:70px;">${parts[0]}<br><span style="font-weight:400;color:var(--text-muted)">${parts[1]||''}</span></th>`;
   }
-  hRow.innerHTML += `<th style="position:sticky;right:0;background:var(--bg-card2);z-index:3;">Σ</th>`;
+  hRow.innerHTML = hHtml;
   thead.appendChild(hRow);
 
-  // Result row
-  const rRow = document.createElement('tr');
-  rRow.innerHTML = `<td class="name-cell" style="font-size:11px;color:var(--text-muted);">Rezultat</td>`;
+  // Red sa ukupnim bodovima
+  const sumRow = document.createElement('tr');
+  let sHtml = `<td class="name-cell" style="font-size:11px;color:var(--text-muted);">Ukupno</td><td class="res-cell" style="text-align:center;color:var(--text-muted);font-size:11px;">–</td>`;
+  for (const p of scored) {
+    const c = p.correct >= 50 ? 'var(--success)' : p.correct >= 35 ? 'var(--gold)' : 'var(--text-muted)';
+    sHtml += `<td class="score-row" style="text-align:center;color:${c}">${p.correct}</td>`;
+  }
+  sumRow.innerHTML = sHtml;
+  tbody.appendChild(sumRow);
+
+  // Red po utakmica
   for (const m of MATCHES) {
     const r = resultMap[m.id];
-    rRow.innerHTML += `<td><span class="result-badge">${r || '–'}</span></td>`;
-  }
-  rRow.innerHTML += `<td class="score-cell">–</td>`;
-  tbody.appendChild(rRow);
-
-  // Participant rows
-  for (const p of scored) {
-    const ptips = tipMap[p.id] || {};
     const row = document.createElement('tr');
-    row.innerHTML = `<td class="name-cell">${escHtml(p.name)}</td>`;
-
-    for (const m of MATCHES) {
+    let rHtml = `
+      <td class="name-cell">#${m.id} ${escHtml(m.home)} vs ${escHtml(m.away)}</td>
+      <td class="res-cell" style="text-align:center;"><span class="result-badge">${r || '–'}</span></td>`;
+    for (const p of scored) {
+      const ptips = tipMap[p.id] || {};
       const t = ptips[m.id];
-      const r = resultMap[m.id];
-      if (!t) {
-        row.innerHTML += `<td>–</td>`;
-        continue;
-      }
+      if (!t) { rHtml += `<td>–</td>`; continue; }
       const ok = isCorrect(t.type, t.value, r);
-      const stateCls = ok === null ? '' : (ok ? ' ok' : ' bad');
-      row.innerHTML += `<td><span class="tc${stateCls}">${t.value}</span></td>`;
+      const cls = ok === null ? '' : (ok ? ' ok' : ' bad');
+      rHtml += `<td style="text-align:center;"><span class="tc${cls}">${t.value}</span></td>`;
     }
-
-    row.innerHTML += `<td class="score-cell">${p.correct}</td>`;
+    row.innerHTML = rHtml;
     tbody.appendChild(row);
   }
 }

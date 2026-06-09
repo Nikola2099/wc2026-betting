@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unesi tip — SP 2026</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .name-section {
+      max-width: 480px;
+      margin: 0 auto 24px;
+    }
+    .name-section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .leg-s { background: var(--single); }
+    .leg-d { background: var(--double); }
+    .leg-t { background: var(--triple); }
+
+    #submit-btn-wrap {
+      position: sticky;
+      bottom: 0;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      text-align: center;
+      z-index: 80;
+    }
+    #submit-btn-wrap .btn { min-width: 200px; }
+    #submit-error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .closed-overlay {
+      text-align: center;
+      padding: 64px 16px;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">
+    <span class="trophy">🏆</span>
+    SP 2026 Klađenje
+  </a>
+  <nav>
+    <a href="index.html">Početna</a>
+    <a href="submit.html" class="active">Unesi tip</a>
+    <a href="results.html">Rezultati</a>
+  </nav>
+</header>
+
+<!-- Counter bar -->
+<div class="counter-bar" id="counter-bar">
+  <div class="counter-item">
+    <span class="counter-pill single" id="cnt-single">0/47</span>
+    <span>jednoznak</span>
+  </div>
+  <div class="counter-item">
+    <span class="counter-pill double" id="cnt-double">0/20</span>
+    <span>dvoznak</span>
+  </div>
+  <div class="counter-item">
+    <span class="counter-pill triple" id="cnt-triple">0/5</span>
+    <span>troznak</span>
+  </div>
+  <div class="counter-item">
+    <span class="counter-pill" id="cnt-total" style="background:rgba(125,133,144,.15);color:var(--text-muted)">0/72</span>
+    <span>popunjeno</span>
+  </div>
+  <div class="status" id="counter-status"></div>
+</div>
+
+<div class="container" id="main-container">
+
+  <!-- Closed state -->
+  <div id="closed-section" style="display:none" class="closed-overlay">
+    <div style="font-size:48px; margin-bottom:16px;">⏰</div>
+    <h2 style="color:var(--danger); margin-bottom:8px;">Rok je istekao</h2>
+    <p style="color:var(--text-muted); margin-bottom:24px;">Unos tipova je zatvoren 10. juna 2026. u ponoć.</p>
+    <a href="results.html" class="btn btn-primary">Pogledaj rezultate</a>
+  </div>
+
+  <!-- Form section -->
+  <div id="form-section">
+
+    <div class="name-section">
+      <h2>Tvoji tipovi za SP 2026</h2>
+      <div class="form-group">
+        <label for="participant-name">Tvoje ime i prezime</label>
+        <input type="text" id="participant-name" placeholder="npr. Marko Marković" maxlength="60" autocomplete="name" />
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot leg-s"></div> Jednoznak (1/X/2)</div>
+      <div class="legend-item"><div class="legend-dot leg-d"></div> Dvoznak (1X/X2/12)</div>
+      <div class="legend-item"><div class="legend-dot leg-t"></div> Troznak (auto-pogodak)</div>
+    </div>
+
+    <div id="matches-container">
+      <div class="loading"><span class="spinner"></span> Učitavanje utakmica...</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Sticky submit button -->
+<div id="submit-btn-wrap">
+  <button class="btn btn-primary btn-lg" id="submit-btn" disabled>
+    Pošalji tipove
+  </button>
+  <div id="submit-error"></div>
+</div>
+
+<!-- Success modal -->
+<div id="success-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; display:none; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:400px; text-align:center; margin:0 16px;">
+    <div style="font-size:48px; margin-bottom:12px;">✅</div>
+    <h2 style="color:var(--success); margin-bottom:8px;">Tipovi su poslati!</h2>
+    <p style="color:var(--text-muted); margin-bottom:20px;">Tvoji tipovi su sačuvani. Rezultati će biti vidljivi posle roka.</p>
+    <a href="index.html" class="btn btn-primary">Nazad na početnu</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="js/matches.js"></script>
+<script src="js/submit.js"></script>
+
+</body>
+</html>

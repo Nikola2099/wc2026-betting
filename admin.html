@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — SP 2026</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .admin-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .admin-nav-btn {
+      padding: 7px 16px;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all .15s;
+    }
+    .admin-nav-btn.active, .admin-nav-btn:hover {
+      background: var(--bg-card);
+      color: var(--text);
+      border-color: var(--gold);
+    }
+
+    .group-filter {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .group-filter-btn {
+      padding: 4px 10px;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all .12s;
+    }
+    .group-filter-btn.active {
+      background: var(--gold);
+      color: #000;
+      border-color: var(--gold);
+    }
+
+    #login-screen {
+      max-width: 360px;
+      margin: 64px auto;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+      gap: 16px;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row .s-label { font-weight: 600; font-size: 14px; }
+    .settings-row .s-desc  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .toggle {
+      position: relative;
+      width: 44px; height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: .2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 3px; top: 3px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      transition: .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--success); border-color: var(--success); }
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+      background: #000;
+    }
+
+    .participants-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .participants-table th {
+      background: var(--bg-card2);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .participants-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(48,54,61,.4);
+    }
+    .participants-table tr:hover td { background: rgba(255,255,255,.02); }
+
+    .save-indicator {
+      font-size: 12px;
+      color: var(--success);
+      opacity: 0;
+      transition: opacity .3s;
+      margin-left: 8px;
+    }
+    .save-indicator.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">
+    <span class="trophy">🏆</span>
+    SP 2026 — Admin
+  </a>
+  <nav>
+    <a href="index.html">Sajt</a>
+    <a href="results.html">Rezultati</a>
+    <a href="#" id="logout-link" style="color:var(--danger)">Odjava</a>
+  </nav>
+</header>
+
+<!-- Login -->
+<div class="container" id="login-screen">
+  <div class="card">
+    <h2 style="margin-bottom:20px; font-size:20px;">Admin prijava</h2>
+    <div class="form-group">
+      <label>Lozinka</label>
+      <input type="password" id="admin-pwd" placeholder="Admin lozinka" />
+    </div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%">Prijavi se</button>
+    <div id="login-error" class="alert alert-danger" style="display:none; margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div class="container" id="admin-panel" style="display:none">
+
+  <div class="admin-nav">
+    <button class="admin-nav-btn active" data-panel="results">⚽ Unos rezultata</button>
+    <button class="admin-nav-btn" data-panel="participants">👥 Učesnici</button>
+    <button class="admin-nav-btn" data-panel="settings">⚙️ Podešavanja</button>
+  </div>
+
+  <!-- Panel: rezultati -->
+  <div id="panel-results" class="panel-section">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+      <h3 style="font-size:17px; font-weight:700;">Unos rezultata</h3>
+      <span id="results-progress" style="font-size:13px; color:var(--text-muted);"></span>
+    </div>
+
+    <div class="group-filter" id="group-filter">
+      <button class="group-filter-btn active" data-group="all">Sve</button>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div id="matches-list">
+        <div class="loading"><span class="spinner"></span> Učitavanje...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel: učesnici -->
+  <div id="panel-participants" class="panel-section" style="display:none">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <h3 style="font-size:17px; font-weight:700;">Učesnici</h3>
+      <span id="participants-count" style="font-size:13px; color:var(--text-muted);"></span>
+    </div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="participants-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Ime</th>
+            <th>Vreme prijave</th>
+            <th>Tipova</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="participants-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Panel: podešavanja -->
+  <div id="panel-settings" class="panel-section" style="display:none">
+    <h3 style="font-size:17px; font-weight:700; margin-bottom:16px;">Podešavanja</h3>
+    <div class="card">
+      <div class="settings-row">
+        <div>
+          <div class="s-label">Prijem tipova otvoren</div>
+          <div class="s-desc">Kada isključiš, nova predavanja neće biti moguća i rezultati postaju vidljivi.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-open" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="s-label">Eksportuj sve tipove</div>
+          <div class="s-desc">Preuzmi CSV sa svim tipovima svih učesnika.</div>
+        </div>
+        <button class="btn btn-secondary" id="export-csv-btn">⬇ CSV</button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="s-label">Promeni admin lozinku</div>
+          <div class="s-desc">Menja lozinku u supabase-config.js fajlu (ručno).</div>
+        </div>
+        <span style="font-size:12px; color:var(--text-muted);">Izmeni supabase-config.js</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="js/matches.js"></script>
+<script src="js/admin.js"></script>
+
+</body>
+</html>

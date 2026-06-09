@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rezultati — SP 2026</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      padding: 8px 18px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color .15s;
+    }
+    .tab-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 48px 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+    }
+    .leaderboard-row:last-child { border-bottom: none; }
+    .leaderboard-row.top1 { background: rgba(240,180,41,.06); }
+    .leaderboard-row.top2 { background: rgba(192,192,192,.04); }
+    .leaderboard-row.top3 { background: rgba(205,127,50,.04); }
+
+    .rank-num {
+      font-weight: 800;
+      font-size: 18px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .rank-num.r1 { color: #f0b429; }
+    .rank-num.r2 { color: #aaaaaa; }
+    .rank-num.r3 { color: #cd7f32; }
+
+    .participant-name { font-weight: 600; font-size: 15px; }
+    .participant-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .score-big { font-size: 22px; font-weight: 800; color: var(--success); }
+    .score-max { font-size: 12px; color: var(--text-muted); }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--bg-card2);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--success);
+      border-radius: 2px;
+    }
+
+    /* Detail table */
+    .detail-wrap {
+      overflow-x: auto;
+    }
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 700px;
+    }
+    .detail-table th {
+      background: var(--bg-card2);
+      padding: 6px 8px;
+      text-align: center;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .detail-table th.match-header {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      height: 80px;
+      vertical-align: bottom;
+      padding: 4px;
+    }
+    .detail-table td {
+      padding: 5px 6px;
+      border: 1px solid rgba(48,54,61,.4);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .detail-table td.name-cell {
+      text-align: left;
+      font-weight: 600;
+      padding: 5px 12px;
+      white-space: nowrap;
+      position: sticky;
+      left: 0;
+      background: var(--bg-card);
+      z-index: 2;
+    }
+    .detail-table td.score-cell {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--success);
+      position: sticky;
+      right: 0;
+      background: var(--bg-card);
+      z-index: 2;
+    }
+    .tc { font-size: 11px; font-weight: 700; }
+    .tc.s { color: var(--single); }
+    .tc.d { color: var(--double); }
+    .tc.t { color: var(--triple); }
+    .tc.ok { background: rgba(63,185,80,.2); border-radius: 2px; padding: 1px 3px; }
+    .tc.bad { background: rgba(248,81,73,.1); border-radius: 2px; padding: 1px 3px; opacity: .7; }
+    .result-badge {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      background: rgba(255,255,255,.1);
+    }
+
+    .locked-msg {
+      text-align: center;
+      padding: 64px 16px;
+    }
+    .locked-msg .icon { font-size: 56px; margin-bottom: 16px; }
+    .locked-msg h2 { color: var(--gold); margin-bottom: 8px; }
+    .locked-msg p { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">
+    <span class="trophy">🏆</span>
+    SP 2026 Klađenje
+  </a>
+  <nav>
+    <a href="index.html">Početna</a>
+    <a href="submit.html">Unesi tip</a>
+    <a href="results.html" class="active">Rezultati</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div id="loading" class="loading"><span class="spinner"></span> Učitavanje...</div>
+
+  <!-- Locked (pre-deadline) -->
+  <div id="locked-section" style="display:none" class="locked-msg">
+    <div class="icon">🔒</div>
+    <h2>Rezultati su zaključani</h2>
+    <p>Tipovi svih učesnika biće vidljivi tek nakon isteka roka za predaju — 10. jun 2026. u ponoć.</p>
+    <br>
+    <a href="submit.html" class="btn btn-primary" style="margin-top:12px">Unesi svoje tipove</a>
+  </div>
+
+  <!-- Results -->
+  <div id="results-section" style="display:none">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+      <h2 style="font-size:22px; font-weight:800;">Rezultati</h2>
+      <div id="stats-summary" style="font-size:13px; color:var(--text-muted);"></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="leaderboard">Rang lista</button>
+      <button class="tab-btn" data-tab="detail">Detaljna tabela</button>
+    </div>
+
+    <!-- Leaderboard tab -->
+    <div id="tab-leaderboard" class="tab-content active">
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div id="leaderboard-list"></div>
+      </div>
+    </div>
+
+    <!-- Detail tab -->
+    <div id="tab-detail" class="tab-content">
+      <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">
+        Tipovi označeni zelenom su pogođeni, crvenom promašeni. Troznak (1X2) je uvek zelen.
+        Rezultati koji još nisu uneseni su sivi.
+      </div>
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="detail-wrap">
+          <table class="detail-table" id="detail-table">
+            <thead id="detail-head"></thead>
+            <tbody id="detail-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="js/matches.js"></script>
+<script src="js/results.js"></script>
+
+</body>
+</html>

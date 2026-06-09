@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SP 2026 Klađenje</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">
+    <span class="trophy">🏆</span>
+    SP 2026 Klađenje
+  </a>
+  <nav>
+    <a href="index.html" class="active">Početna</a>
+    <a href="submit.html">Unesi tip</a>
+    <a href="results.html">Rezultati</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div class="hero">
+    <div class="trophy-big">⚽</div>
+    <h1>Svetsko Prvenstvo 2026</h1>
+    <p>Takmičenje u predviđanju rezultata grupne faze. Ulog 2.000 din. Pobednik osvaja ceo fond.</p>
+  </div>
+
+  <div style="text-align:center; margin-bottom: 32px;">
+    <div class="deadline-box">
+      <div>
+        <div class="dl-label">Rok za slanje tipova</div>
+        <div class="dl-value">10. jun 2026. — ponoć</div>
+      </div>
+      <div id="countdown" style="font-size: 20px; font-weight: 800; color: var(--danger); min-width: 120px;"></div>
+    </div>
+  </div>
+
+  <div class="rules-grid">
+    <div class="rule-card">
+      <div class="rule-icon">1️⃣</div>
+      <h3>Jednoznak — 47 utakmica</h3>
+      <p>Biraš tačan ishod:<br>
+        <strong>1</strong> – pobeda domaćina<br>
+        <strong>X</strong> – nerešeno<br>
+        <strong>2</strong> – pobeda gosta
+      </p>
+    </div>
+    <div class="rule-card">
+      <div class="rule-icon">2️⃣</div>
+      <h3>Dvoznak — 20 utakmica</h3>
+      <p>Sam biraš koje 20 utakmica igraš kao dvoznak:<br>
+        <strong>1X</strong> – domaćin ili nerešeno<br>
+        <strong>X2</strong> – nerešeno ili gost<br>
+        <strong>12</strong> – pobeda bilo koga
+      </p>
+    </div>
+    <div class="rule-card">
+      <div class="rule-icon">3️⃣</div>
+      <h3>Troznak — 5 utakmica</h3>
+      <p>Sam biraš 5 utakmica za troznak.<br>
+        <strong>1X2</strong> – automatski pogodak bez obzira na ishod.<br>
+        Koristi pametno!
+      </p>
+    </div>
+    <div class="rule-card">
+      <div class="rule-icon">🏅</div>
+      <h3>Pobednik</h3>
+      <p>Osoba sa <strong>najviše pogodaka</strong> na kraju grupne faze osvaja fond. U slučaju izjednačenja — dobitak se deli ravnomerno.</p>
+    </div>
+    <div class="rule-card">
+      <div class="rule-icon">💰</div>
+      <h3>Ulog</h3>
+      <p>Ulog za učešće je <strong>2.000 dinara</strong>.<br>Svako predaje svoje tipove nezavisno do roka.</p>
+    </div>
+    <div class="rule-card">
+      <div class="rule-icon">📊</div>
+      <h3>Transparentnost</h3>
+      <p>Svi tipovi ostaju skriveni do isteka roka. Posle roka sve biva vidljivo u jednoj tabeli.</p>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-bottom: 32px;">
+    <div id="submit-block">
+      <a href="submit.html" class="btn btn-primary btn-lg">⚽ Unesi svoje tipove</a>
+      <p style="margin-top: 12px; color: var(--text-muted); font-size: 13px;">Svako popunjava svih 72 utakmice grupne faze.</p>
+    </div>
+    <div id="closed-block" style="display:none;">
+      <div class="alert alert-warning" style="display: inline-block; max-width: 400px;">
+        ⏰ Rok za unos tipova je istekao. Tabela rezultata je dostupna.
+      </div>
+      <br>
+      <a href="results.html" class="btn btn-secondary btn-lg" style="margin-top: 12px;">📊 Pogledaj rezultate</a>
+    </div>
+  </div>
+
+</div>
+
+<script src="supabase-config.js"></script>
+<script>
+  // Countdown timer
+  const DEADLINE = new Date('2026-06-10T23:59:59+02:00');
+
+  function updateCountdown() {
+    const now = new Date();
+    const diff = DEADLINE - now;
+
+    if (diff <= 0) {
+      document.getElementById('countdown').textContent = 'ISTEKLO';
+      document.getElementById('submit-block').style.display = 'none';
+      document.getElementById('closed-block').style.display = 'block';
+      return;
+    }
+
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    const hh = String(h).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+
+    if (h < 24) {
+      document.getElementById('countdown').innerHTML =
+        `<span style="color:var(--danger)">${hh}:${mm}:${ss}</span>`;
+    } else {
+      const days = Math.floor(diff / 86400000);
+      document.getElementById('countdown').innerHTML =
+        `<span style="color:var(--gold)">${days}d ${hh}:${mm}:${ss}</span>`;
+    }
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+</script>
+
+</body>
+</html>

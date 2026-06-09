@@ -261,11 +261,12 @@ async function loadSettings() {
   document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
 }
 
-// ---- Export CSV ----
+// ---- Export Excel ----
 async function exportCSV() {
-  const [{ data: participants }, { data: tips }] = await Promise.all([
+  const [{ data: participants }, { data: tips }, { data: matches }] = await Promise.all([
     supabase.from('participants').select('id, name, created_at').order('name'),
     supabase.from('tips').select('participant_id, match_id, tip_type, tip_value'),
+    supabase.from('matches').select('id, result'),
   ]);
 
   if (!participants || !tips) return;
@@ -273,29 +274,70 @@ async function exportCSV() {
   const tipMap = {};
   for (const t of tips) {
     if (!tipMap[t.participant_id]) tipMap[t.participant_id] = {};
-    tipMap[t.participant_id][t.match_id] = `${t.tip_value}(${t.tip_type[0]})`;
+    tipMap[t.participant_id][t.match_id] = { value: t.tip_value, type: t.tip_type };
   }
 
-  const headers = ['Ime', ...MATCHES.map(m => `#${m.id} ${m.home}-${m.away}`)];
-  const rows = participants.map(p => {
-    const row = [p.name];
+  const resultMap = {};
+  for (const m of matches || []) resultMap[m.id] = m.result;
+
+  // ---- Sheet 1: Tipovi po učesniku ----
+  const headers = ['#', 'Ime', ...MATCHES.map(m => `#${m.id} ${m.home} vs ${m.away}`), 'Ukupno'];
+  const dataRows = participants.map((p, i) => {
+    let correct = 0;
+    const row = [i + 1, p.name];
     for (const m of MATCHES) {
-      row.push(tipMap[p.id]?.[m.id] || '');
+      const t = tipMap[p.id]?.[m.id];
+      const r = resultMap[m.id];
+      let cell = t ? t.value : '';
+      if (t && r) {
+        const ok = t.type === 'triple' ? true
+          : t.type === 'single' ? t.value === r
+          : (t.value === '1X' ? r==='1'||r==='X' : t.value === 'X2' ? r==='X'||r==='2' : r==='1'||r==='2');
+        if (ok) correct++;
+      }
+      row.push(cell);
     }
+    row.push(correct);
     return row;
   });
 
-  const csv = [headers, ...rows].map(r =>
-    r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')
-  ).join('\n');
+  const ws1Data = [headers, ...dataRows];
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
 
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'sp2026-tipovi.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+  // Širina kolona
+  ws1['!cols'] = [{ wch: 4 }, { wch: 22 }, ...MATCHES.map(() => ({ wch: 8 })), { wch: 8 }];
+
+  // ---- Sheet 2: Rang lista ----
+  const scored = participants.map(p => {
+    let correct = 0;
+    for (const m of MATCHES) {
+      const t = tipMap[p.id]?.[m.id];
+      const r = resultMap[m.id];
+      if (t && r) {
+        const ok = t.type === 'triple' ? true
+          : t.type === 'single' ? t.value === r
+          : (t.value === '1X' ? r==='1'||r==='X' : t.value === 'X2' ? r==='X'||r==='2' : r==='1'||r==='2');
+        if (ok) correct++;
+      }
+    }
+    return { name: p.name, correct };
+  }).sort((a, b) => b.correct - a.correct);
+
+  let rank = 1;
+  const rankRows = scored.map((p, i) => {
+    if (i > 0 && p.correct < scored[i-1].correct) rank = i + 1;
+    return [rank, p.name, p.correct];
+  });
+
+  const ws2 = XLSX.utils.aoa_to_sheet([['Mesto', 'Ime', 'Bodovi'], ...rankRows]);
+  ws2['!cols'] = [{ wch: 7 }, { wch: 24 }, { wch: 8 }];
+
+  // ---- Workbook ----
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, 'Tipovi');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Rang lista');
+
+  XLSX.writeFile(wb, 'SP2026-tipovi.xlsx');
 }
 
 function escHtml(s) {

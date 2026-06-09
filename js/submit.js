@@ -153,17 +153,6 @@ function toggleType(matchId, type) {
     return;
   }
 
-  const counts  = getCounts();
-  const prevVal = current && current.value != null;
-  const prevType = current ? current.type : null;
-  const adding  = prevType !== type;
-  const typeCount = (counts[type] || 0) - (prevType === type && prevVal ? 1 : 0);
-
-  if (adding && typeCount >= LIMITS[type]) {
-    showError(`Dostignut limit za ${type === 'double' ? 'dvoznak (max 20)' : 'troznak (max 5)'}`);
-    return;
-  }
-
   if (type === 'triple') {
     tips[matchId] = { type: 'triple', value: '1X2' };
     showMode(matchId, 'triple');
@@ -185,16 +174,6 @@ function selectValue(matchId, mode, value) {
 
   // Ignorisi klik na single dugme dok je double/triple aktivan
   if (mode === 'single' && curType !== 'single') return;
-
-  // Limit check za single
-  if (mode === 'single') {
-    const counts = getCounts();
-    const prev = current && current.type === 'single' && current.value != null ? 1 : 0;
-    if (counts.single - prev >= LIMITS.single) {
-      showError('Dostignut limit za jednoznak (max 47)');
-      return;
-    }
-  }
 
   tips[matchId] = { type: mode, value };
   highlightValue(matchId, mode, value);

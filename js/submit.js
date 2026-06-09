@@ -23,7 +23,7 @@ function checkDeadline() {
 function getCounts() {
   const c = { single: 0, double: 0, triple: 0, total: 0 };
   for (const t of Object.values(tips)) {
-    if (!t || t.value === null) continue;
+    if (t === null || t === undefined || t.value === null) continue;
     c[t.type]++;
     c.total++;
   }

@@ -11,4 +11,5 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Promeni pre deploy-a!
 const ADMIN_PASSWORD = 'sp2026admin';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Prebriši library objekat sa klijentom (izbegava konflikt sa CDN-om)
+window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

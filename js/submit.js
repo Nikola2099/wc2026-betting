@@ -243,7 +243,7 @@ function refreshRow(matchId, type, selectedValue) {
     const btn = document.createElement('button');
     btn.className = `tip-btn val-btn${val === selectedValue ? ' active' : ''}`;
     btn.textContent = val;
-    btn.addEventListener('click', () => onValueClick(matchId, type, val));
+    btn.addEventListener('click', () => onValueClick(matchId, val, type));
     valueArea.appendChild(btn);
   });
 }

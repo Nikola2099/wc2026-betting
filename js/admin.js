@@ -257,8 +257,16 @@ async function loadSettings() {
     showSaveFlash();
   });
 
-  // Export CSV
-  document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
+  // Export Excel — dostupno samo nakon isteka roka
+  const exportBtn = document.getElementById('export-csv-btn');
+  const deadlinePassed = new Date() > new Date('2026-06-10T23:59:59+02:00');
+  if (!deadlinePassed) {
+    exportBtn.disabled = true;
+    exportBtn.title = 'Export je dostupan tek nakon isteka roka (10. jun 2026. u ponoć)';
+    exportBtn.textContent = '⬇ Excel (.xlsx) — dostupno nakon roka';
+  } else {
+    exportBtn.addEventListener('click', exportCSV);
+  }
 }
 
 // ---- Export Excel ----

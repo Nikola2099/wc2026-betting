@@ -275,6 +275,18 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   btn.textContent = 'Slanje...';
 
   try {
+    const { data: existing } = await supabase
+      .from('participants')
+      .select('id')
+      .ilike('name', name)
+      .maybeSingle();
+    if (existing) {
+      showError('Ime već postoji — svako može da pošalje tipove samo jednom.');
+      btn.disabled = false;
+      btn.textContent = 'Pošalji tipove';
+      return;
+    }
+
     const { data: participant, error: pErr } = await supabase
       .from('participants').insert({ name }).select('id').single();
     if (pErr) throw pErr;

@@ -262,7 +262,7 @@ async function loadSettings() {
   const deadlinePassed = new Date() > new Date('2026-06-11T17:00:00+02:00');
   if (!deadlinePassed) {
     exportBtn.disabled = true;
-    exportBtn.title = 'Export je dostupan tek nakon isteka roka (10. jun 2026. u ponoć)';
+    exportBtn.title = 'Export je dostupan tek nakon isteka roka (11. jun 2026. u 17:00)';
     exportBtn.textContent = '⬇ Excel (.xlsx) — dostupno nakon roka';
   } else {
     exportBtn.addEventListener('click', exportCSV);

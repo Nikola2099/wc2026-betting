@@ -2,7 +2,7 @@
 // results.js — prikaz rezultata i rang liste
 // ============================================================
 
-const DEADLINE = new Date('2026-06-10T23:59:59+02:00');
+const DEADLINE = new Date('2026-06-11T17:00:00+02:00');
 
 function isCorrect(tipType, tipValue, result) {
   if (!result) return null; // još nema rezultata

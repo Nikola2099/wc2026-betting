@@ -2,7 +2,7 @@
 // submit.js
 // ============================================================
 
-const DEADLINE = new Date('2026-06-10T23:59:59+02:00');
+const DEADLINE = new Date('2026-06-11T17:00:00+02:00');
 const LIMITS   = { single: 47, double: 20, triple: 5 };
 const tips     = {}; // { matchId: { type, value } }
 

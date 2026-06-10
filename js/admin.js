@@ -184,19 +184,18 @@ function showSaveFlash() {
 
 // ---- Učesnici ----
 async function loadParticipants() {
-  const [{ data: participants }, { data: tips }] = await Promise.all([
-    supabase.from('participants').select('id, name, created_at').order('created_at'),
-    supabase.from('tips').select('participant_id').limit(10000),
-  ]);
+  const { data: participants } = await supabase
+    .from('participants')
+    .select('id, name, created_at, tips(count)')
+    .order('created_at');
 
   if (!participants) return;
 
   allParticipants = participants;
-  allTips = tips || [];
 
   const tipCount = {};
-  for (const t of allTips) {
-    tipCount[t.participant_id] = (tipCount[t.participant_id] || 0) + 1;
+  for (const p of participants) {
+    tipCount[p.id] = p.tips?.[0]?.count ?? 0;
   }
 
   document.getElementById('participants-count').textContent = `${participants.length} učesnika`;

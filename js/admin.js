@@ -186,7 +186,7 @@ function showSaveFlash() {
 async function loadParticipants() {
   const [{ data: participants }, { data: tips }] = await Promise.all([
     supabase.from('participants').select('id, name, created_at').order('created_at'),
-    supabase.from('tips').select('participant_id'),
+    supabase.from('tips').select('participant_id').limit(10000),
   ]);
 
   if (!participants) return;
@@ -277,7 +277,7 @@ async function exportCSV() {
   }
   const [{ data: participants }, { data: tips }, { data: matches }] = await Promise.all([
     supabase.from('participants').select('id, name, created_at').order('name'),
-    supabase.from('tips').select('participant_id, match_id, tip_type, tip_value'),
+    supabase.from('tips').select('participant_id, match_id, tip_type, tip_value').limit(10000),
     supabase.from('matches').select('id, result'),
   ]);
 

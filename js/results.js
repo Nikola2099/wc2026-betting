@@ -36,7 +36,7 @@ async function loadResults() {
   // Učitaj podatke
   const [{ data: participants }, { data: tips }, { data: matchResults }] = await Promise.all([
     supabase.from('participants').select('id, name, created_at').order('created_at'),
-    supabase.from('tips').select('participant_id, match_id, tip_type, tip_value'),
+    supabase.from('tips').select('participant_id, match_id, tip_type, tip_value').limit(10000),
     supabase.from('matches').select('id, result'),
   ]);
 

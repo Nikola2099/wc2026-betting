@@ -16,13 +16,7 @@ function loadStatsTab() {
   const nameMap = {};
   for (const p of participants) nameMap[p.id] = p.name;
 
-  const upcoming = MATCHES.filter(m => !resultMap[m.id]);
-
-  if (upcoming.length === 0) {
-    container.innerHTML = '<div class="loading" style="color:var(--text-muted)">Sve utakmice grupne faze su završene.</div>';
-    return;
-  }
-
+  const upcoming = MATCHES;
   const upcomingIdSet = new Set(upcoming.map(m => m.id));
 
   // { matchId: { tipValue: [name, ...] } }

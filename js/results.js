@@ -52,6 +52,8 @@ async function loadResults() {
     tips.push(...data);
     if (data.length < PAGE) break;
   }
+  const uniqueParticipantsWithTips = new Set(tips.map(t => t.participant_id)).size;
+  console.log(`[DEBUG] Učitano tipova: ${tips.length}, učesnika sa tipovima: ${uniqueParticipantsWithTips}, ukupno učesnika: ${participants?.length}`);
 
   if (!participants || participants.length === 0) {
     document.getElementById('results-section').style.display = 'block';

@@ -34,11 +34,24 @@ async function loadResults() {
   }
 
   // Učitaj podatke
-  const [{ data: participants }, { data: tips }, { data: matchResults }] = await Promise.all([
+  const [{ data: participants }, { data: matchResults }] = await Promise.all([
     supabase.from('participants').select('id, name, created_at').order('created_at'),
-    supabase.from('tips').select('participant_id, match_id, tip_type, tip_value').limit(10000),
     supabase.from('matches').select('id, result'),
   ]);
+
+  // Fetch svih tipova sa paginacijom (PostgREST default limit je 1000 redova)
+  const tips = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('tips')
+      .select('participant_id, match_id, tip_type, tip_value')
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    tips.push(...data);
+    if (data.length < PAGE) break;
+  }
 
   if (!participants || participants.length === 0) {
     document.getElementById('results-section').style.display = 'block';

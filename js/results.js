@@ -103,10 +103,9 @@ async function loadResults() {
 
   // ---- Rang lista ----
   const list = document.getElementById('leaderboard-list');
-  let rank = 1;
   for (let i = 0; i < scored.length; i++) {
     const p = scored[i];
-    if (i > 0 && scored[i].correct < scored[i-1].correct) rank = i + 1;
+    const rank = i + 1;
 
     const rankLabels = { 1: '🥇', 2: '🥈', 3: '🥉' };
     const pct = resultsEntered > 0 ? `${Math.round(p.correct / resultsEntered * 100)}%` : '-';

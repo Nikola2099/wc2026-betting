@@ -1,27 +1,20 @@
 // ============================================================
-// stats.js — statistika za narednih 5 utakmica (tab u results)
+// stats.js — statistika po utakmicama (koristi podatke iz results.js)
 // ============================================================
 
 const TIP_VALUES = ['1', 'X', '2', '1X', 'X2', '12', '1X2'];
 
 let statsLoaded = false;
 
-async function loadStatsTab() {
+function loadStatsTab() {
   if (statsLoaded) return;
   statsLoaded = true;
 
   const container = document.getElementById('stats-tab-content');
-
-  const [{ data: matchResults }, { data: participants }] = await Promise.all([
-    supabase.from('matches').select('id, result'),
-    supabase.from('participants').select('id, name'),
-  ]);
-
-  const resultMap = {};
-  for (const m of matchResults) resultMap[m.id] = m.result;
+  const { tips, participants, resultMap } = window._sharedData;
 
   const nameMap = {};
-  for (const p of participants || []) nameMap[p.id] = p.name;
+  for (const p of participants) nameMap[p.id] = p.name;
 
   const upcoming = MATCHES.filter(m => !resultMap[m.id]);
 
@@ -30,25 +23,13 @@ async function loadStatsTab() {
     return;
   }
 
-  const upcomingIds = upcoming.map(m => m.id);
-  const tips = [];
-  const PAGE = 1000;
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
-      .from('tips')
-      .select('participant_id, match_id, tip_value')
-      .in('match_id', upcomingIds)
-      .range(from, from + PAGE - 1);
-    if (error) break;
-    if (!data || data.length === 0) break;
-    tips.push(...data);
-    if (data.length < PAGE) break;
-  }
+  const upcomingIdSet = new Set(upcoming.map(m => m.id));
 
   // { matchId: { tipValue: [name, ...] } }
   const matchStats = {};
-  for (const id of upcomingIds) matchStats[id] = {};
-  for (const t of tips || []) {
+  for (const id of upcomingIdSet) matchStats[id] = {};
+  for (const t of tips) {
+    if (!upcomingIdSet.has(t.match_id)) continue;
     if (!matchStats[t.match_id][t.tip_value]) matchStats[t.match_id][t.tip_value] = [];
     matchStats[t.match_id][t.tip_value].push(nameMap[t.participant_id] || '?');
   }
@@ -56,7 +37,7 @@ async function loadStatsTab() {
   const grid = document.createElement('div');
   grid.className = 'stats-grid';
   for (const match of upcoming) {
-    grid.appendChild(buildMatchCard(match, matchStats[match.id], participants?.length || 0));
+    grid.appendChild(buildMatchCard(match, matchStats[match.id], participants.length));
   }
 
   container.innerHTML = '';
@@ -70,7 +51,6 @@ function buildMatchCard(match, stats, totalParticipants) {
   const total = Object.values(stats).reduce((s, arr) => s + arr.length, 0);
   const pct = (n) => total > 0 ? Math.round(n / total * 100) : 0;
 
-  // Header
   const header = document.createElement('div');
   header.className = 'match-stat-header';
   header.innerHTML = `
@@ -81,7 +61,6 @@ function buildMatchCard(match, stats, totalParticipants) {
   `;
   card.appendChild(header);
 
-  // Chips + names panel
   const breakdown = document.createElement('div');
   breakdown.className = 'tip-breakdown';
 
@@ -113,10 +92,9 @@ function buildMatchCard(match, stats, totalParticipants) {
         if (activeChip) activeChip.classList.remove('active');
         activeChip = chip;
         chip.classList.add('active');
-        namesPanel.style.display = 'block';
+        namesPanel.style.display = 'flex';
         namesPanel.innerHTML = names
-          .slice()
-          .sort()
+          .slice().sort()
           .map(n => `<span class="name-tag">${escHtml2(n)}</span>`)
           .join('');
       });
@@ -126,7 +104,6 @@ function buildMatchCard(match, stats, totalParticipants) {
 
   card.appendChild(breakdown);
   card.appendChild(namesPanel);
-
   return card;
 }
 

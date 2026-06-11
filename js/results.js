@@ -66,6 +66,9 @@ async function loadResults() {
     resultMap[m.id] = m.result;
   }
 
+  // Podeli podatke sa stats.js (bez ponovnog fetcha)
+  window._sharedData = { tips, participants, resultMap };
+
   // Mapa tipova: participantId → { matchId → {type, value} }
   const tipMap = {};
   for (const t of tips) {
@@ -130,6 +133,7 @@ async function loadResults() {
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      if (btn.dataset.tab === 'stats') loadStatsTab();
     });
   });
 }

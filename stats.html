@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Statistika — SP 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .stats-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .match-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+    }
+
+    .match-stat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .match-stat-id {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .match-stat-teams {
+      font-size: 16px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .match-stat-date {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .match-stat-total {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+    }
+
+    .outcome-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .outcome-row {
+      display: grid;
+      grid-template-columns: 36px 1fr 90px;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .outcome-label {
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      padding: 3px 0;
+      border-radius: 5px;
+    }
+
+    .outcome-label.o1 { color: var(--single); }
+    .outcome-label.oX { color: var(--gold); }
+    .outcome-label.o2 { color: var(--danger); }
+
+    .outcome-bar-wrap {
+      background: var(--bg-card2);
+      border-radius: 4px;
+      height: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .outcome-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .4s ease;
+      min-width: 2px;
+    }
+
+    .outcome-bar-fill.o1 { background: var(--single); opacity: .85; }
+    .outcome-bar-fill.oX { background: var(--gold);   opacity: .85; }
+    .outcome-bar-fill.o2 { background: var(--danger); opacity: .85; }
+
+    .outcome-stats {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .outcome-stats span {
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-left: 4px;
+    }
+
+    .detail-toggle {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      user-select: none;
+    }
+    .detail-toggle:hover { color: var(--text); }
+
+    .tip-breakdown {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tip-breakdown.open { display: flex; }
+
+    .tip-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    .tip-chip .chip-val {
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .chip-val.v1  { color: var(--single); }
+    .chip-val.vX  { color: var(--gold); }
+    .chip-val.v2  { color: var(--danger); }
+    .chip-val.v1X { color: var(--double); }
+    .chip-val.vX2 { color: var(--double); }
+    .chip-val.v12 { color: var(--double); }
+    .chip-val.v1X2 { color: var(--triple); }
+    .chip-count { color: var(--text-muted); }
+
+    .no-upcoming {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="index.html">
+    <span class="trophy">🏆</span>
+    SP 2026 Klađenje
+  </a>
+  <nav>
+    <a href="index.html">Početna</a>
+    <a href="submit.html">Unesi tip</a>
+    <a href="results.html">Rezultati</a>
+    <a href="stats.html" class="active">Statistika</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+    <h2 style="font-size:22px; font-weight:800;">Narednih 5 utakmica</h2>
+    <div id="participants-info" style="font-size:13px; color:var(--text-muted);"></div>
+  </div>
+
+  <div class="alert alert-info" style="margin-bottom:20px; font-size:12px;">
+    Prikazano koliko učesnika pokriva svaki ishod (1, X, 2) — uključujući dvoznake i troznake koji ga pokrivaju.
+  </div>
+
+  <div id="loading" class="loading"><span class="spinner"></span> Učitavanje...</div>
+
+  <div id="stats-content" style="display:none">
+    <div class="stats-grid" id="stats-grid"></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="js/matches.js"></script>
+<script src="js/stats.js"></script>
+
+</body>
+</html>

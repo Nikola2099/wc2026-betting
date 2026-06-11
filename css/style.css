@@ -486,7 +486,31 @@ a:hover { text-decoration: underline; }
 }
 
 /* ---- RESPONSIVE ---- */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .container { padding: 16px 12px; }
+
+  /* Nav — horizontalni scroll umesto skrivanja */
+  .site-header { padding: 0 12px; }
+  .site-header nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .site-header nav::-webkit-scrollbar { display: none; }
+  .site-header nav a { white-space: nowrap; font-size: 13px; }
+
+  /* Hero */
+  .hero { padding: 28px 8px 24px; }
+  .hero h1 { font-size: 22px; }
+  .hero p { font-size: 14px; }
+
+  /* Counter bar */
+  .counter-bar { gap: 8px; padding: 8px 12px; flex-wrap: wrap; }
+  .counter-bar .status { margin-left: 0; width: 100%; }
+
+  /* Match row na submit */
   .match-row {
     grid-template-columns: 28px 48px 1fr;
     grid-template-rows: auto auto;
@@ -495,7 +519,10 @@ a:hover { text-decoration: underline; }
     grid-column: 1 / -1;
     justify-content: flex-start;
   }
-  .hero h1 { font-size: 24px; }
-  .counter-bar { gap: 10px; }
-  .site-header nav { display: none; }
+
+  /* Cards */
+  .card { padding: 16px; }
+
+  /* Deadline box */
+  .deadline-box { flex-direction: column; gap: 8px; padding: 16px; text-align: center; }
 }

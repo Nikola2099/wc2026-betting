@@ -174,6 +174,42 @@
 
     .container { max-width: 1600px; }
 
+    /* ---- MOBILE ---- */
+    @media (max-width: 768px) {
+      /* Tabovi — horizontalni scroll */
+      .tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 1px;
+      }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tab-btn { white-space: nowrap; padding: 8px 14px; font-size: 13px; }
+
+      /* Leaderboard — 1 kolona */
+      #leaderboard-list {
+        grid-template-columns: 1fr;
+        grid-template-rows: unset;
+        grid-auto-flow: row;
+      }
+
+      /* Stats kartice */
+      .match-stat-header { gap: 8px; }
+      .match-stat-teams { font-size: 14px; }
+      .tip-breakdown { gap: 6px; }
+
+      /* Analiza i poređenje selektori */
+      .cmp-selectors { flex-direction: column; }
+      .cmp-select { min-width: unset; width: 100%; }
+
+      /* Analiza tabela */
+      .remain-bar { display: none; }
+
+      /* Detaljna tabela — smanji font */
+      .detail-table { font-size: 11px; }
+    }
+
     /* ---- STATISTIKA TAB ---- */
     .stats-grid { display: flex; flex-direction: column; gap: 16px; }
     .match-stat-card {

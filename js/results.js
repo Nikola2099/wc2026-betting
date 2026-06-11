@@ -135,6 +135,7 @@ async function loadResults() {
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
       if (btn.dataset.tab === 'stats') loadStatsTab();
       if (btn.dataset.tab === 'analysis') loadAnalysisTab();
+      if (btn.dataset.tab === 'compare') initCompareTab();
     });
   });
 }
@@ -245,6 +246,83 @@ function loadAnalysisTab() {
     `;
     tbody.appendChild(tr);
   });
+}
+
+// ---- POREĐENJE ----
+let compareInited = false;
+
+function initCompareTab() {
+  const { tips, participants, resultMap } = window._sharedData;
+  if (!compareInited) {
+    compareInited = true;
+
+    // Popuni dropdown opcije
+    ['cmp-p1','cmp-p2','cmp-p3'].forEach(id => {
+      const sel = document.getElementById(id);
+      for (const p of participants) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        sel.appendChild(opt);
+      }
+      sel.addEventListener('change', renderCompareTable);
+    });
+  }
+  renderCompareTable();
+}
+
+function renderCompareTable() {
+  const { tips, participants, resultMap } = window._sharedData;
+
+  const ids = ['cmp-p1','cmp-p2','cmp-p3']
+    .map(id => document.getElementById(id).value)
+    .filter(Boolean);
+
+  const wrap = document.getElementById('cmp-table-wrap');
+
+  if (ids.length === 0) {
+    wrap.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px;">Izaberi bar jednog učesnika.</div>';
+    return;
+  }
+
+  // Mapa ime po id
+  const { participants: parts } = window._sharedData;
+  const nameById = {};
+  for (const p of parts) nameById[p.id] = p.name;
+
+  // Mapa tipova: participantId → matchId → {type, value}
+  const pTipMap = {};
+  for (const t of tips) {
+    if (!ids.includes(t.participant_id)) continue;
+    if (!pTipMap[t.participant_id]) pTipMap[t.participant_id] = {};
+    pTipMap[t.participant_id][t.match_id] = { type: t.tip_type, value: t.tip_value };
+  }
+
+  let html = `<table class="detail-table" style="min-width:100%">
+    <thead><tr>
+      <th class="match-col">Utakmica</th>
+      <th class="res-col">Rez.</th>
+      ${ids.map(id => `<th style="min-width:120px;font-size:11px;padding:6px 8px;">${escHtml(nameById[id] || id)}</th>`).join('')}
+    </tr></thead>
+    <tbody>`;
+
+  for (const m of MATCHES) {
+    const r = resultMap[m.id];
+    html += `<tr>
+      <td class="name-cell">#${m.id} ${escHtml(m.home)} vs ${escHtml(m.away)}</td>
+      <td class="res-cell" style="text-align:center"><span class="result-badge">${r || '–'}</span></td>`;
+    for (const pid of ids) {
+      const t = (pTipMap[pid] || {})[m.id];
+      if (!t) { html += `<td style="text-align:center;color:var(--text-muted)">–</td>`; continue; }
+      const ok = isCorrect(t.type, t.value, r);
+      const cls = ok === null ? '' : (ok ? ' ok' : ' bad');
+      html += `<td style="text-align:center"><span class="tc${cls}">${t.value}</span></td>`;
+    }
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
 }
 
 loadResults();

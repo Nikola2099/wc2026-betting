@@ -227,6 +227,27 @@
       color: var(--text);
     }
 
+    /* ---- POREĐENJE TAB ---- */
+    .cmp-selectors {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .cmp-select {
+      flex: 1;
+      min-width: 180px;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+    .cmp-select:focus { border-color: var(--gold); }
+
     /* ---- ANALIZA TAB ---- */
     .analysis-table {
       width: 100%;
@@ -316,6 +337,7 @@
       <button class="tab-btn" data-tab="detail">Detaljna tabela</button>
       <button class="tab-btn" data-tab="stats">Statistika</button>
       <button class="tab-btn" data-tab="analysis">Analiza</button>
+      <button class="tab-btn" data-tab="compare">Poređenje</button>
     </div>
 
     <!-- Leaderboard tab -->
@@ -347,6 +369,20 @@
         Raspodela tipova po utakmicama. Klikni na tip da vidiš ko ga je odigrao.
       </div>
       <div id="stats-tab-content"><div class="loading"><span class="spinner"></span> Učitavanje...</div></div>
+    </div>
+
+    <!-- Compare tab -->
+    <div id="tab-compare" class="tab-content">
+      <div class="cmp-selectors">
+        <select class="cmp-select" id="cmp-p1"><option value="">— Učesnik 1 —</option></select>
+        <select class="cmp-select" id="cmp-p2"><option value="">— Učesnik 2 —</option></select>
+        <select class="cmp-select" id="cmp-p3"><option value="">— Učesnik 3 —</option></select>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden; margin-top:16px;">
+        <div class="detail-wrap" id="cmp-table-wrap">
+          <div style="padding:32px; text-align:center; color:var(--text-muted); font-size:13px;">Izaberi bar jednog učesnika.</div>
+        </div>
+      </div>
     </div>
 
     <!-- Analysis tab -->

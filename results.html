@@ -173,6 +173,59 @@
     .locked-msg p { color: var(--text-muted); }
 
     .container { max-width: 1600px; }
+
+    /* ---- STATISTIKA TAB ---- */
+    .stats-grid { display: flex; flex-direction: column; gap: 16px; }
+    .match-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+    }
+    .match-stat-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .match-stat-id { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+    .match-stat-teams { font-size: 16px; font-weight: 700; flex: 1; }
+    .match-stat-date { font-size: 12px; color: var(--text-muted); }
+    .match-stat-total {
+      font-size: 12px; color: var(--text-muted);
+      background: var(--bg-card2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2px 10px;
+    }
+    .tip-breakdown { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tip-chip { display: flex; align-items: center; gap: 6px; background: var(--bg-card2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 12px; }
+    .tip-chip-btn { cursor: pointer; transition: border-color .15s, background .15s; }
+    .tip-chip-btn:hover { border-color: #555; background: var(--bg-card); }
+    .tip-chip-btn.active { border-color: var(--gold); background: rgba(240,180,41,.08); }
+    .tip-chip .chip-val { font-weight: 800; font-size: 14px; }
+    .chip-val.v1   { color: var(--single); }
+    .chip-val.vX   { color: var(--gold); }
+    .chip-val.v2   { color: var(--danger); }
+    .chip-val.v1X, .chip-val.vX2, .chip-val.v12 { color: var(--double); }
+    .chip-val.v1X2 { color: var(--triple); }
+    .chip-count { color: var(--text-muted); }
+    .names-panel {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: none;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .name-tag {
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
@@ -186,7 +239,6 @@
     <a href="index.html">Početna</a>
     <a href="submit.html">Unesi tip</a>
     <a href="results.html" class="active">Rezultati</a>
-    <a href="stats.html">Statistika</a>
   </nav>
 </header>
 
@@ -213,6 +265,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="leaderboard">Rang lista</button>
       <button class="tab-btn" data-tab="detail">Detaljna tabela</button>
+      <button class="tab-btn" data-tab="stats">Statistika</button>
     </div>
 
     <!-- Leaderboard tab -->
@@ -238,6 +291,14 @@
       </div>
     </div>
 
+    <!-- Stats tab -->
+    <div id="tab-stats" class="tab-content">
+      <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">
+        Raspodela tipova po utakmicama. Klikni na tip da vidiš ko ga je odigrao.
+      </div>
+      <div id="stats-tab-content"><div class="loading"><span class="spinner"></span> Učitavanje...</div></div>
+    </div>
+
   </div>
 </div>
 
@@ -245,6 +306,7 @@
 <script src="supabase-config.js"></script>
 <script src="js/matches.js"></script>
 <script src="js/results.js"></script>
+<script src="js/stats.js"></script>
 
 </body>
 </html>

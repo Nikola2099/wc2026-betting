@@ -226,6 +226,55 @@
       padding: 3px 8px;
       color: var(--text);
     }
+
+    /* ---- ANALIZA TAB ---- */
+    .analysis-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .analysis-table th {
+      background: var(--bg-card2);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .analysis-table th.num { text-align: center; }
+    .analysis-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(48,54,61,.4);
+    }
+    .analysis-table tr:hover td { background: rgba(255,255,255,.03); }
+    .remain-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .remain-badge.double { background: var(--double-bg); color: var(--double); }
+    .remain-badge.triple { background: var(--triple-bg); color: var(--triple); }
+    .remain-badge.zero   { background: rgba(255,255,255,.05); color: var(--text-muted); opacity: .6; }
+    .remain-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .remain-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-card2);
+      border-radius: 3px;
+      overflow: hidden;
+      max-width: 80px;
+    }
+    .remain-bar-fill { height: 100%; border-radius: 3px; }
+    .remain-bar-fill.double { background: var(--double); }
+    .remain-bar-fill.triple { background: var(--triple); }
   </style>
 </head>
 <body>
@@ -266,6 +315,7 @@
       <button class="tab-btn active" data-tab="leaderboard">Rang lista</button>
       <button class="tab-btn" data-tab="detail">Detaljna tabela</button>
       <button class="tab-btn" data-tab="stats">Statistika</button>
+      <button class="tab-btn" data-tab="analysis">Analiza</button>
     </div>
 
     <!-- Leaderboard tab -->
@@ -297,6 +347,28 @@
         Raspodela tipova po utakmicama. Klikni na tip da vidiš ko ga je odigrao.
       </div>
       <div id="stats-tab-content"><div class="loading"><span class="spinner"></span> Učitavanje...</div></div>
+    </div>
+
+    <!-- Analysis tab -->
+    <div id="tab-analysis" class="tab-content">
+      <div class="alert alert-info" style="margin-bottom:12px; font-size:12px;">
+        Preostali dvoznaci i troznaci za neodigrane utakmice — ko još ima "adute" u rukavu.
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table class="analysis-table" id="analysis-table">
+            <thead>
+              <tr>
+                <th class="num">#</th>
+                <th>Učesnik</th>
+                <th>Dvoznaci preostali</th>
+                <th>Troznaci preostali</th>
+              </tr>
+            </thead>
+            <tbody id="analysis-body"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
   </div>

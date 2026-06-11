@@ -134,6 +134,7 @@ async function loadResults() {
       btn.classList.add('active');
       document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
       if (btn.dataset.tab === 'stats') loadStatsTab();
+      if (btn.dataset.tab === 'analysis') loadAnalysisTab();
     });
   });
 }
@@ -185,6 +186,65 @@ function buildDetailTable(scored, tipMap, resultMap) {
 
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let analysisLoaded = false;
+
+function loadAnalysisTab() {
+  if (analysisLoaded) return;
+  analysisLoaded = true;
+
+  const { tips, participants, resultMap } = window._sharedData;
+
+  // Skupovi ID-eva odigranih i neodigranih utakmica
+  const playedIds   = new Set(MATCHES.filter(m =>  resultMap[m.id]).map(m => m.id));
+  const upcomingIds = new Set(MATCHES.filter(m => !resultMap[m.id]).map(m => m.id));
+
+  // Za svakog učesnika izbroji preostale dvoznake i troznake
+  const tipMap = {};
+  for (const t of tips) {
+    if (!tipMap[t.participant_id]) tipMap[t.participant_id] = [];
+    tipMap[t.participant_id].push(t);
+  }
+
+  const rows = participants.map(p => {
+    const ptips = tipMap[p.id] || [];
+    const remDouble = ptips.filter(t => t.tip_type === 'double' && upcomingIds.has(t.match_id)).length;
+    const remTriple = ptips.filter(t => t.tip_type === 'triple' && upcomingIds.has(t.match_id)).length;
+    const usedDouble = ptips.filter(t => t.tip_type === 'double' && playedIds.has(t.match_id)).length;
+    const usedTriple = ptips.filter(t => t.tip_type === 'triple' && playedIds.has(t.match_id)).length;
+    return { name: p.name, remDouble, remTriple, usedDouble, usedTriple };
+  });
+
+  // Sortiraj: više preostalog = gore
+  rows.sort((a, b) => (b.remTriple - a.remTriple) || (b.remDouble - a.remDouble));
+
+  const tbody = document.getElementById('analysis-body');
+  rows.forEach((r, i) => {
+    const dPct = Math.round(r.remDouble / 20 * 100);
+    const tPct = Math.round(r.remTriple / 5 * 100);
+    const dCls = r.remDouble === 0 ? 'zero' : 'double';
+    const tCls = r.remTriple === 0 ? 'zero' : 'triple';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align:center;color:var(--text-muted);font-weight:700">${i + 1}</td>
+      <td style="font-weight:600">${escHtml(r.name)}</td>
+      <td>
+        <div class="remain-bar-wrap">
+          <span class="remain-badge ${dCls}">${r.remDouble}/20</span>
+          <div class="remain-bar"><div class="remain-bar-fill double" style="width:${dPct}%"></div></div>
+        </div>
+      </td>
+      <td>
+        <div class="remain-bar-wrap">
+          <span class="remain-badge ${tCls}">${r.remTriple}/5</span>
+          <div class="remain-bar"><div class="remain-bar-fill triple" style="width:${tPct}%"></div></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 loadResults();

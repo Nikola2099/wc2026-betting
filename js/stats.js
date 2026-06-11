@@ -4,6 +4,16 @@
 
 const TIP_VALUES = ['1', 'X', '2', '1X', 'X2', '12', '1X2'];
 
+function coversResult(tipValue, result) {
+  if (!result) return false;
+  if (tipValue === result) return true;
+  if (tipValue === '1X')  return result === '1' || result === 'X';
+  if (tipValue === 'X2')  return result === 'X' || result === '2';
+  if (tipValue === '12')  return result === '1' || result === '2';
+  if (tipValue === '1X2') return true;
+  return false;
+}
+
 let statsLoaded = false;
 
 function loadStatsTab() {
@@ -16,31 +26,30 @@ function loadStatsTab() {
   const nameMap = {};
   for (const p of participants) nameMap[p.id] = p.name;
 
-  const upcoming = MATCHES;
-  const upcomingIdSet = new Set(upcoming.map(m => m.id));
+  const allIds = new Set(MATCHES.map(m => m.id));
 
   // { matchId: { tipValue: [name, ...] } }
   const matchStats = {};
-  for (const id of upcomingIdSet) matchStats[id] = {};
+  for (const id of allIds) matchStats[id] = {};
   for (const t of tips) {
-    if (!upcomingIdSet.has(t.match_id)) continue;
+    if (!allIds.has(t.match_id)) continue;
     if (!matchStats[t.match_id][t.tip_value]) matchStats[t.match_id][t.tip_value] = [];
     matchStats[t.match_id][t.tip_value].push(nameMap[t.participant_id] || '?');
   }
 
   const grid = document.createElement('div');
   grid.className = 'stats-grid';
-  for (const match of upcoming) {
-    grid.appendChild(buildMatchCard(match, matchStats[match.id], participants.length));
+  for (const match of MATCHES) {
+    grid.appendChild(buildMatchCard(match, matchStats[match.id], participants.length, resultMap[match.id]));
   }
 
   container.innerHTML = '';
   container.appendChild(grid);
 }
 
-function buildMatchCard(match, stats, totalParticipants) {
+function buildMatchCard(match, stats, totalParticipants, result) {
   const card = document.createElement('div');
-  card.className = 'match-stat-card';
+  card.className = result ? 'match-stat-card match-stat-finished' : 'match-stat-card';
 
   const total = Object.values(stats).reduce((s, arr) => s + arr.length, 0);
   const pct = (n) => total > 0 ? Math.round(n / total * 100) : 0;
@@ -51,6 +60,7 @@ function buildMatchCard(match, stats, totalParticipants) {
     <span class="match-stat-id">#${match.id}</span>
     <span class="match-stat-teams">${escHtml2(match.home)} <span style="color:var(--text-muted);font-weight:400;font-size:13px">vs</span> ${escHtml2(match.away)}</span>
     <span class="match-stat-date">${formatDate(match.date)}</span>
+    ${result ? `<span class="match-result-badge">${result}</span>` : ''}
     <span class="match-stat-total">${total}/${totalParticipants} tipova</span>
   `;
   card.appendChild(header);
@@ -69,8 +79,9 @@ function buildMatchCard(match, stats, totalParticipants) {
   } else {
     for (const v of presentValues) {
       const names = stats[v];
+      const won = coversResult(v, result);
       const chip = document.createElement('div');
-      chip.className = 'tip-chip tip-chip-btn';
+      chip.className = `tip-chip tip-chip-btn${won ? ' chip-winner' : (result ? ' chip-loser' : '')}`;
       chip.innerHTML = `
         <span class="chip-val v${v}">${v}</span>
         <span class="chip-count">${names.length}×</span>

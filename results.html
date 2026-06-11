@@ -242,6 +242,30 @@
     .chip-val.v1X, .chip-val.vX2, .chip-val.v12 { color: var(--double); }
     .chip-val.v1X2 { color: var(--triple); }
     .chip-count { color: var(--text-muted); }
+
+    .match-stat-finished {
+      border-color: rgba(63,185,80,.35);
+      border-left: 3px solid var(--success);
+    }
+    .match-result-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px; height: 28px;
+      background: var(--success);
+      color: #000;
+      font-size: 13px;
+      font-weight: 800;
+      border-radius: 6px;
+    }
+    .chip-winner {
+      border-color: var(--success) !important;
+      background: rgba(63,185,80,.15) !important;
+      box-shadow: 0 0 0 1px rgba(63,185,80,.4);
+    }
+    .chip-winner .chip-val { color: var(--success) !important; }
+    .chip-winner .chip-count { color: rgba(63,185,80,.8); }
+    .chip-loser { opacity: .45; }
     .names-panel {
       display: none;
       margin-top: 12px;

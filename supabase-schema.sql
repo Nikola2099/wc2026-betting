@@ -50,9 +50,11 @@ alter table participants enable row level security;
 alter table tips enable row level security;
 alter table settings enable row level security;
 
--- Matches: svi mogu da čitaju
+-- Matches: svi mogu da čitaju, admin može da ažurira
 drop policy if exists "matches_select" on matches;
+drop policy if exists "matches_update" on matches;
 create policy "matches_select" on matches for select using (true);
+create policy "matches_update" on matches for update using (true) with check (true);
 
 -- Settings: svi mogu da čitaju
 drop policy if exists "settings_select" on settings;

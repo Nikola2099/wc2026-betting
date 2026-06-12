@@ -266,6 +266,24 @@ async function loadSettings() {
   } else {
     exportBtn.addEventListener('click', exportCSV);
   }
+
+  document.getElementById('export-detail-btn').addEventListener('click', exportDetailTable);
+}
+
+// ---- Helper: fetch svih tipova sa paginacijom ----
+async function fetchAllTips() {
+  const all = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('tips')
+      .select('participant_id, match_id, tip_type, tip_value')
+      .range(from, from + PAGE - 1);
+    if (error || !data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < PAGE) break;
+  }
+  return all;
 }
 
 // ---- Export Excel ----
@@ -274,10 +292,12 @@ async function exportCSV() {
     alert('SheetJS biblioteka se nije učitala. Provjeri internet konekciju i pokušaj ponovo.');
     return;
   }
-  const [{ data: participants }, { data: tips }, { data: matches }] = await Promise.all([
-    supabase.from('participants').select('id, name, created_at').order('name'),
-    supabase.from('tips').select('participant_id, match_id, tip_type, tip_value').limit(10000),
-    supabase.from('matches').select('id, result'),
+  const [[{ data: participants }, { data: matches }], tips] = await Promise.all([
+    Promise.all([
+      supabase.from('participants').select('id, name, created_at').order('name'),
+      supabase.from('matches').select('id, result'),
+    ]),
+    fetchAllTips(),
   ]);
 
   if (!participants || !tips) return;
@@ -349,6 +369,96 @@ async function exportCSV() {
   XLSX.utils.book_append_sheet(wb, ws2, 'Rang lista');
 
   XLSX.writeFile(wb, 'SP2026-tipovi.xlsx');
+}
+
+// ---- Export Detaljna tabela ----
+async function exportDetailTable() {
+  if (typeof XLSX === 'undefined') {
+    alert('SheetJS biblioteka se nije učitala.');
+    return;
+  }
+
+  const btn = document.getElementById('export-detail-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generisanje...';
+
+  const [[{ data: participants }, { data: matches }], tips] = await Promise.all([
+    Promise.all([
+      supabase.from('participants').select('id, name, created_at').order('created_at'),
+      supabase.from('matches').select('id, result'),
+    ]),
+    fetchAllTips(),
+  ]);
+
+  if (!participants || !tips) { btn.disabled = false; btn.textContent = '⬇ Detaljna tabela (.xlsx)'; return; }
+
+  const resultMap = {};
+  for (const m of matches || []) resultMap[m.id] = m.result;
+
+  const tipMap = {};
+  for (const t of tips) {
+    if (!tipMap[t.participant_id]) tipMap[t.participant_id] = {};
+    tipMap[t.participant_id][t.match_id] = { value: t.tip_value, type: t.tip_type };
+  }
+
+  // Bodovi po učesniku
+  function calcCorrect(p) {
+    let c = 0;
+    for (const m of MATCHES) {
+      const t = tipMap[p.id]?.[m.id];
+      const r = resultMap[m.id];
+      if (!t || !r) continue;
+      const ok = t.type === 'triple' ? true
+        : t.type === 'single' ? t.value === r
+        : (t.value === '1X' ? r==='1'||r==='X' : t.value === 'X2' ? r==='X'||r==='2' : r==='1'||r==='2');
+      if (ok) c++;
+    }
+    return c;
+  }
+
+  const scored = participants
+    .map(p => ({ ...p, correct: calcCorrect(p) }))
+    .sort((a, b) => b.correct - a.correct);
+
+  // Header red: Utakmica | Rezultat | Ime1 | Ime2 | ...
+  const header = ['#', 'Utakmica', 'Rez.', ...scored.map((p, i) => `${i+1}. ${p.name} (${p.correct})`), 'Bodovi →'];
+  const rows = [header];
+
+  for (const m of MATCHES) {
+    const r = resultMap[m.id] || '–';
+    const row = [m.id, `${m.home} vs ${m.away}`, r];
+    for (const p of scored) {
+      const t = tipMap[p.id]?.[m.id];
+      row.push(t ? t.value : '–');
+    }
+    row.push('');
+    rows.push(row);
+  }
+
+  // Bodovi red na kraju
+  const scoreRow = ['', 'UKUPNO', '', ...scored.map(p => p.correct), ''];
+  rows.push(scoreRow);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Širina kolona
+  ws['!cols'] = [
+    { wch: 4 },   // #
+    { wch: 30 },  // Utakmica
+    { wch: 6 },   // Rez.
+    ...scored.map(() => ({ wch: 14 })),
+    { wch: 4 },
+  ];
+
+  // Zamrzni prve dve kolone i header red
+  ws['!freeze'] = { xSplit: 3, ySplit: 1 };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Detaljna tabela');
+  XLSX.writeFile(wb, 'SP2026-detaljna-tabela.xlsx');
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Detaljna tabela (.xlsx)';
 }
 
 function escHtml(s) {

@@ -66,7 +66,8 @@ async function loadResults() {
     resultMap[m.id] = m.result;
   }
 
-  // Podeli podatke sa stats.js (bez ponovnog fetcha)
+  // Podeli podatke sa stats.js i analysis tabom (bez ponovnog fetcha)
+  // scored se dodaje nakon sortiranja ispod
   window._sharedData = { tips, participants, resultMap };
 
   // Mapa tipova: participantId → { matchId → {type, value} }
@@ -93,6 +94,7 @@ async function loadResults() {
 
   // Sortiraj po bodovima
   scored.sort((a, b) => b.correct - a.correct);
+  window._sharedData.scored = scored;
 
   const maxCorrect = scored[0]?.correct || 0;
   const resultsEntered = MATCHES.filter(m => resultMap[m.id]).length;
@@ -194,30 +196,33 @@ function loadAnalysisTab() {
   if (analysisLoaded) return;
   analysisLoaded = true;
 
-  const { tips, participants, resultMap } = window._sharedData;
+  const { tips, resultMap, scored } = window._sharedData;
 
-  // Skupovi ID-eva odigranih i neodigranih utakmica
   const playedIds   = new Set(MATCHES.filter(m =>  resultMap[m.id]).map(m => m.id));
   const upcomingIds = new Set(MATCHES.filter(m => !resultMap[m.id]).map(m => m.id));
 
-  // Za svakog učesnika izbroji preostale dvoznake i troznake
   const tipMap = {};
   for (const t of tips) {
     if (!tipMap[t.participant_id]) tipMap[t.participant_id] = [];
     tipMap[t.participant_id].push(t);
   }
 
-  const rows = participants.map(p => {
+  // Koristi scored (već sortirano po bodovima)
+  const rows = scored.map(p => {
     const ptips = tipMap[p.id] || [];
     const remDouble = ptips.filter(t => t.tip_type === 'double' && upcomingIds.has(t.match_id)).length;
     const remTriple = ptips.filter(t => t.tip_type === 'triple' && upcomingIds.has(t.match_id)).length;
-    const usedDouble = ptips.filter(t => t.tip_type === 'double' && playedIds.has(t.match_id)).length;
-    const usedTriple = ptips.filter(t => t.tip_type === 'triple' && playedIds.has(t.match_id)).length;
-    return { name: p.name, remDouble, remTriple, usedDouble, usedTriple };
+    return { name: p.name, correct: p.correct, remDouble, remTriple };
   });
 
-  // Sortiraj: više preostalog = gore
-  rows.sort((a, b) => (b.remTriple - a.remTriple) || (b.remDouble - a.remDouble));
+  // Ažuriraj header tabele da doda kolonu Bodovi
+  document.querySelector('#analysis-table thead tr').innerHTML = `
+    <th class="num">#</th>
+    <th>Učesnik</th>
+    <th style="text-align:center">Bodovi</th>
+    <th>Dvoznaci preostali</th>
+    <th>Troznaci preostali</th>
+  `;
 
   const tbody = document.getElementById('analysis-body');
   rows.forEach((r, i) => {
@@ -225,11 +230,13 @@ function loadAnalysisTab() {
     const tPct = Math.round(r.remTriple / 5 * 100);
     const dCls = r.remDouble === 0 ? 'zero' : 'double';
     const tCls = r.remTriple === 0 ? 'zero' : 'triple';
+    const scoreColor = i === 0 ? 'var(--success)' : i < 3 ? 'var(--gold)' : 'var(--text)';
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="text-align:center;color:var(--text-muted);font-weight:700">${i + 1}</td>
       <td style="font-weight:600">${escHtml(r.name)}</td>
+      <td style="text-align:center;font-weight:800;font-size:15px;color:${scoreColor}">${r.correct}</td>
       <td>
         <div class="remain-bar-wrap">
           <span class="remain-badge ${dCls}">${r.remDouble}/20</span>
